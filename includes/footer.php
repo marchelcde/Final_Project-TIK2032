@@ -1,12 +1,11 @@
 <?php
-?> 
-<html>
- <link rel="stylesheet" href="../css/style.css">
-    </main> 
+// includes/footer.php
+// Location: FINAL_PROJECT-TIK2032/includes/footer.php
+?>
     <footer>
-        <div class="footer-container">
-            <p>&copy; <?php echo date("Y"); ?> - VANKER </p>
+        <div class="container">
+            <p>&copy; <?php echo date("Y"); ?> Sistem Laporan Masyarakat. All rights reserved.</p>
         </div>
     </footer>
-    </body>
+</body>
 </html>
