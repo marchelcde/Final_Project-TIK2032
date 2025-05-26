@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             $stmt_user->close();
             $conn->close();
-            header("location: index.php"); // Redirect to main index (now at root)
+            header("location: user/index.php"); // Redirect to main index (now at root)
             exit();
         }
     }

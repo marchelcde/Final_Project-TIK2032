@@ -9,18 +9,15 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Determine if a user is logged in and their role
+// Determine if a user is logged in and their role (only interested if it's 'user' or 'guest' here)
 $isLoggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 $userRole = $_SESSION['role'] ?? 'guest'; // Default role to 'guest'
 $userName = '';
 
-if ($isLoggedIn) {
-    if ($userRole === 'user') {
-        $userName = $_SESSION['name'] ?? $_SESSION['username'] ?? 'Pengguna';
-    } elseif ($userRole === 'admin') {
-        $userName = $_SESSION['admin_username'] ?? 'Admin';
-    }
+if ($isLoggedIn && $userRole === 'user') { // Only get user name if logged in as a regular user
+    $userName = $_SESSION['name'] ?? $_SESSION['username'] ?? 'Pengguna';
 }
+// Admin specific details are handled in admin_header.php
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -37,14 +34,11 @@ if ($isLoggedIn) {
             <nav>
                 <ul>                    
                     <?php if ($userRole === 'user'): ?>
-                        <li><a href="user/laporan.php" class="require-login">Laporan</a></li>
-                        <li><a href="user/about.php">Tentang SLM</a></li>
+                        <li><a href="laporan.php" class="require-login">Laporan</a></li>
+                        <li><a href="about.php">Tentang SLM</a></li>
                         <li>Selamat Datang, **<?php echo htmlspecialchars($userName); ?>**!</li>
-                        <li><a href="logout.php">Keluar</a></li> <?php elseif ($userRole === 'admin'): ?>
-                        <li><a href="admin/dashboard.php">Dashboard Admin</a></li>
-                        <li>Selamat Datang, **<?php echo htmlspecialchars($userName); ?>**!</li>
-                        <li><a href="logout.php">Keluar</a></li> <?php else: // Guest/Not Logged In ?>
-                        <li><a href="user/about.php">Tentang SLM</a></li>
+                        <li><a href="logout.php">Keluar</a></li> <?php else: // Guest or Admin viewing a user page ?>
+                        <li><a href="about.php">Tentang SLM</a></li>
                         <li><a href="login.php" id="open-login-btn">Masuk</a></li> <?php endif; ?>
                 </ul>
             </nav>
