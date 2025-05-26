@@ -3,7 +3,7 @@
 // Location: FINAL_PROJECT-TIK2032/index.php
 
 // Include header.php which handles session_start() and sets $isLoggedIn, $userRole, $userName
-include 'includes/header.php'; // Path from root to includes/
+include '../includes/header.php'; // Path from root to includes/
 
 // $isLoggedIn, $userRole, and $userName are now available from header.php.
 

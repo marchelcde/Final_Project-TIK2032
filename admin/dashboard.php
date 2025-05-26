@@ -1,65 +1,48 @@
 <?php
 // admin/dashboard.php
-// Mulai session dan cek login
-session_start(); 
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header("Location: login.php");
-    exit();
-}
+// Location: FINAL_PROJECT-TIK2032/admin/dashboard.php
 
-include '../config/database.php';
-// Include header admin atau header biasa + cek login
-// Di sini kita pakai header biasa dan tambahkan auth_check.php
-// atau buat admin_header.php
-// include '../includes/auth_check.php'; // Pastikan isinya sesuai
-include '../includes/header.php'; // Ganti dengan admin_header jika ada
+// Include the new admin_header.php
+// Path from admin/ to includes/admin_header.php
+include '../includes/admin_header.php'; 
 
-echo "<h3>Selamat Datang, " . htmlspecialchars($_SESSION['admin_username']) . "! | <a href='logout.php'>Logout</a></h3>";
-echo "<h2>Dashboard Laporan Masyarakat</h2>";
-
-// Ambil data laporan dari DB
-$sql = "SELECT l.id_laporan, l.kode_unik_laporan, l.judul_laporan, k.nama_kategori, l.tanggal_dilaporkan, l.status_laporan 
-        FROM laporan_masyarakat l 
-        LEFT JOIN kategori_laporan k ON l.id_kategori = k.id_kategori 
-        ORDER BY l.tanggal_dilaporkan DESC";
-$result = $conn->query($sql);
-
+// The login check is now handled within admin_header.php,
+// so you don't strictly need it here again, but it doesn't hurt for redundancy.
+// if (!isset($_SESSION['loggedin']) || !isset($_SESSION['loggedin']) || ($_SESSION['role'] ?? '') !== 'admin') {
+//     header("Location: ../login.php");
+//     exit();
+// }
 ?>
-
-<table>
-    <thead>
-        <tr>
-            <th>Kode Laporan</th>
-            <th>Judul</th>
-            <th>Kategori</th>
-            <th>Tanggal Lapor</th>
-            <th>Status</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars($row['kode_unik_laporan']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['judul_laporan']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['nama_kategori']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['tanggal_dilaporkan']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['status_laporan']) . "</td>";
-                echo "<td>
-                        <a href='laporan_detail.php?id=" . $row['id_laporan'] . "'>Detail</a> 
-                        </td>";
-                echo "</tr>";
-            }
-        } else {
-            echo "<tr><td colspan='6'>Tidak ada laporan saat ini.</td></tr>";
-        }
-        ?>
-    </tbody>
-</table>
-
-<?php
-$conn->close();
-include '../includes/footer.php';
-?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    </head>
+<body>
+    <div class="admin-dashboard-content">
+        <h2>Dashboard Administrator</h2>
+        <p>Selamat datang di panel kontrol administrator. Di sini Anda dapat mengelola kategori, melihat laporan, dan melakukan pengaturan sistem.</p>
+        
+        <h3>Tugas Administrator:</h3>
+        <div>
+            <div>
+            <h4>Pengaturan Sistem</h4>
+            <p>Melakukan konfigurasi dan pemeliharaan pengaturan umum aplikasi untuk memastikan kelancaran operasional.</p>
+        </div>
+            <h4>Kelola Kategori Laporan</h4>
+            <p>Bertanggung jawab untuk menambah, mengedit, atau menghapus kategori laporan yang tersedia bagi pengguna.</p>
+        </div>
+        <div>
+            <h4>Lihat Semua Laporan</h4>
+            <p>Mengakses dan mengelola semua laporan yang masuk dari masyarakat, termasuk melihat detail dan status laporan.</p>
+        </div>
+        
+    </div>
+    <?php
+    // Include the footer.php
+    include '../includes/footer.php'; // Path from admin/ to includes/footer.php
+    ?>
+</body>
+</html>
