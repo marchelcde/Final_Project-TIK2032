@@ -12,9 +12,6 @@
     <title>SLM - Tentang Kami</title>
 </head>
 <body>
-    <header>
-        </header>
-
     <main class="container">
         <h2>Tentang Sistem Laporan Masyarakat (SLM)</h2>
         <p>Sistem Informasi Laporan Masyarakat (SLM) adalah sebuah aplikasi web yang dibangun sebagai bagian dari Proyek Akhir Mata Kuliah Pemrograman Web.</p>
@@ -39,8 +36,8 @@
         </ul>
         <p>Kami tidak menggunakan library atau framework eksternal sesuai dengan ketentuan proyek.</p>
     </main>
-
-    <footer>
-        </footer>
+    <div id="popup-overlay"></div> 
+    <div id="popup-container">
+    <script src = "js/script.js"></script>
 </body>
 </html>

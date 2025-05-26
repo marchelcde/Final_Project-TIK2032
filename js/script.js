@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function loadAndShowPopup() {
     showPopup();
-    popupContainer.innerHTML = "Memuat...";
 
     try {
       const response = await fetch("login.php");
