@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 - Akses Ditolak</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="error-page">
+      <div class="container">
+        <div class="error-content">
+          <div class="error-icon">
+            <i class="fas fa-ban"></i>
+          </div>
+          <h1>403</h1>
+          <h2>Akses Ditolak</h2>
+          <p>
+            Maaf, Anda tidak memiliki izin untuk mengakses halaman ini. Silakan
+            login dengan akun yang memiliki akses yang sesuai.
+          </p>
+          <div class="error-actions">
+            <a href="../index.html" class="btn btn-primary">
+              <i class="fas fa-home"></i> Kembali ke Beranda
+            </a>
+            <a href="../login.html" class="btn btn-secondary">
+              <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: hidden;
+      }
+
+      .error-page {
+        min-height: 100vh;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        background-attachment: fixed;
+        color: white;
+        text-align: center;
+        position: relative;
+      }
+
+      .error-page::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at 20% 80%,
+            rgba(220, 53, 69, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 20%,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 40% 40%,
+            rgba(220, 53, 69, 0.2) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1200px;
+        padding: 0 2rem;
+      }
+
+      .error-content {
+        max-width: 600px;
+        padding: 3rem 2rem;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: slideInUp 0.8s ease-out;
+      }
+
+      .error-icon {
+        font-size: 5rem;
+        margin-bottom: 2rem;
+        color: #ffd700;
+        animation: shake 2s infinite;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        10%,
+        30%,
+        50%,
+        70%,
+        90% {
+          transform: translateX(-5px);
+        }
+        20%,
+        40%,
+        60%,
+        80% {
+          transform: translateX(5px);
+        }
+      }
+
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .error-page h1 {
+        font-size: 8rem;
+        font-weight: 900;
+        margin-bottom: 1rem;
+        text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(45deg, #fff, #ffd700);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .error-page h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .error-page p {
+        font-size: 1.2rem;
+        margin-bottom: 3rem;
+        opacity: 0.95;
+        line-height: 1.6;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .error-actions {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1rem 2rem;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        min-width: 180px;
+        white-space: nowrap;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transition: left 0.6s ease;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(45deg, #28a745, #1e7e34);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      }
+      .btn-primary:hover {
+        background: linear-gradient(45deg, #0056b3, #004085);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(0, 123, 255, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(45deg, #1e7e34, #155724);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(40, 167, 69, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+      }
+
+      .btn i {
+        font-size: 1.2rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 0 1rem;
+        }
+
+        .error-content {
+          padding: 2rem 1.5rem;
+          margin: 1rem;
+        }
+
+        .error-page h1 {
+          font-size: 5rem;
+        }
+
+        .error-page h2 {
+          font-size: 2rem;
+        }
+
+        .error-page p {
+          font-size: 1.1rem;
+          margin-bottom: 2rem;
+        }
+
+        .error-actions {
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .btn {
+          width: 100%;
+          max-width: 280px;
+          justify-content: center;
+        }
+
+        .error-icon {
+          font-size: 4rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .error-page h1 {
+          font-size: 4rem;
+        }
+
+        .error-page h2 {
+          font-size: 1.5rem;
+        }
+
+        .error-content {
+          padding: 1.5rem 1rem;
+        }
+      }
+    </style>
+  </body>
+</html>
