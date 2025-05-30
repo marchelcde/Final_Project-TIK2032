@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config.php'; // Ensure this path is correct for your setup (e.g., shared/php/config.php)
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -37,34 +37,58 @@ switch ($method) {
 
 function createReport($db) {
     try {
-        $data = json_decode(file_get_contents('php://input'), true);
+        // Receive data either from JSON body (for AJAX with application/json) or $_POST (for standard form/multipart)
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            $input = $_POST; // Fallback for x-www-form-urlencoded or multipart/form-data
+        }
         
         // Validate required fields
         $required = ['nama', 'email', 'telepon', 'kategori', 'judul', 'deskripsi', 'lokasi'];
         foreach ($required as $field) {
-            if (empty($data[$field])) {
-                jsonResponse(['error' => "Field $field is required"], 400);
+            if (empty($input[$field])) { // Use $input instead of $data
+                jsonResponse(['error' => "Field '$field' is required"], 400); // Improved error message
             }
         }
         
-        // Generate report ID
-        $reportId = generateId('RPT');
+        // Handle file upload if present (needs to be from $_FILES if form enctype is multipart/form-data)
+        $fotoBuktiPath = null;
+        if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = UPLOAD_PATH; // UPLOAD_PATH defined in config.php
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $fileName = uniqid() . '_' . basename($_FILES['foto_bukti']['name']);
+            $targetFilePath = $uploadDir . $fileName;
+            if (move_uploaded_file($_FILES['foto_bukti']['tmp_name'], $targetFilePath)) {
+                $fotoBuktiPath = $targetFilePath;
+            } else {
+                jsonResponse(['error' => 'Failed to upload photo.'], 500);
+                return;
+            }
+        }
+
+        // Generate report ID (if your 'id' column is not AUTO_INCREMENT)
+        // If 'id' is AUTO_INCREMENT, remove this line and ':id' from query and bindParam.
+        $reportId = generateId('RPT'); 
         
-        // Prepare SQL
-        $query = "INSERT INTO reports (id, nama, email, telepon, kategori, judul, deskripsi, lokasi, status, created_at) 
-                  VALUES (:id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, 'pending', NOW())";
+        // Prepare SQL - Added user_id and foto_bukti columns
+        $query = "INSERT INTO reports (id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at) 
+                  VALUES (:id, :user_id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, :foto_bukti, 'pending', NOW())";
         
         $stmt = $db->prepare($query);
         
         // Bind parameters
         $stmt->bindParam(':id', $reportId);
-        $stmt->bindParam(':nama', sanitize($data['nama']));
-        $stmt->bindParam(':email', sanitize($data['email']));
-        $stmt->bindParam(':telepon', sanitize($data['telepon']));
-        $stmt->bindParam(':kategori', sanitize($data['kategori']));
-        $stmt->bindParam(':judul', sanitize($data['judul']));
-        $stmt->bindParam(':deskripsi', sanitize($data['deskripsi']));
-        $stmt->bindParam(':lokasi', sanitize($data['lokasi']));
+        $stmt->bindValue(':user_id', null, PDO::PARAM_STR); // Explicitly set user_id to NULL for unauthenticated reports
+        $stmt->bindParam(':nama', sanitize($input['nama']));
+        $stmt->bindParam(':email', sanitize($input['email']));
+        $stmt->bindParam(':telepon', sanitize($input['telepon']));
+        $stmt->bindParam(':kategori', sanitize($input['kategori']));
+        $stmt->bindParam(':judul', sanitize($input['judul']));
+        $stmt->bindParam(':deskripsi', sanitize($input['deskripsi']));
+        $stmt->bindParam(':lokasi', sanitize($input['lokasi']));
+        $stmt->bindParam(':foto_bukti', $fotoBuktiPath); // Bind the photo path
         
         if ($stmt->execute()) {
             jsonResponse([
@@ -73,7 +97,7 @@ function createReport($db) {
                 'report_id' => $reportId
             ]);
         } else {
-            jsonResponse(['error' => 'Gagal menyimpan laporan'], 500);
+            jsonResponse(['error' => 'Failed to save report'], 500);
         }
         
     } catch (Exception $e) {
@@ -87,7 +111,8 @@ function getReports($db) {
         $category = $_GET['category'] ?? '';
         $limit = $_GET['limit'] ?? 50;
         
-        $query = "SELECT * FROM reports WHERE 1=1";
+        // Include user_id and feedback_admin in the select list
+        $query = "SELECT id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at, feedback_admin FROM reports WHERE 1=1";
         $params = [];
         
         if ($status) {
@@ -117,6 +142,10 @@ function getReports($db) {
             $report['status_text'] = getStatusText($report['status']);
             $report['category_text'] = getCategoryText($report['kategori']);
             $report['formatted_date'] = formatDate($report['created_at']);
+            // Add full path to foto_bukti if it exists
+            if (!empty($report['foto_bukti'])) {
+                $report['foto_bukti_url'] = APP_URL . '/' . $report['foto_bukti'];
+            }
         }
         
         jsonResponse([
@@ -137,7 +166,8 @@ function getReportDetail($db) {
             jsonResponse(['error' => 'Report ID is required'], 400);
         }
         
-        $query = "SELECT * FROM reports WHERE id = :id";
+        // Include user_id and feedback_admin in the select list
+        $query = "SELECT id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at, updated_at, feedback_admin FROM reports WHERE id = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -152,6 +182,10 @@ function getReportDetail($db) {
         $report['status_text'] = getStatusText($report['status']);
         $report['category_text'] = getCategoryText($report['kategori']);
         $report['formatted_date'] = formatDate($report['created_at']);
+        // Add full path to foto_bukti if it exists
+        if (!empty($report['foto_bukti'])) {
+            $report['foto_bukti_url'] = APP_URL . '/' . $report['foto_bukti'];
+        }
         
         jsonResponse([
             'success' => true,

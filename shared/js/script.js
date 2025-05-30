@@ -19,11 +19,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Form Submission Handler
+  // Form Submission Handler for the main index.html form (if still used)
   const reportForm = document.getElementById("reportForm");
   if (reportForm) {
     reportForm.addEventListener("submit", handleReportSubmission);
   }
+
+  // NEW: Form Submission Handler for the user's report form on laporan.php
+  const userReportForm = document.getElementById("userReportForm");
+  if (userReportForm) {
+    userReportForm.addEventListener("submit", handleReportSubmission);
+  }
+
   // Login Form Handler
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
@@ -64,7 +71,9 @@ function handleReportSubmission(e) {
   // Show loading notification
   showNotification("Mengirim laporan...", "info");
 
-  // Send report data to PHP handler
+  // Determine the correct PHP handler based on the form's ID or context
+  // Since both index.html and laporan.php (for logged-in users) use user/php/user_handler.php
+  // for submission, this URL remains consistent.
   fetch("user/php/user_handler.php?action=submit_report", {
     method: "POST",
     body: formData, // FormData directly as body, fetch sets Content-Type automatically
@@ -132,7 +141,7 @@ function handleLogin(e) {
           }, 1000);
         } else {
           setTimeout(() => {
-            window.location.href = "user/user-dashboard.html";
+            window.location.href = "user/user-dashboard.html"; // Redirect to user dashboard
           }, 1000);
         }
       } else {
@@ -516,3 +525,79 @@ function initializeDemoData() {
 
 // Initialize demo data on page load
 initializeDemoData();
+
+// Add this function to your shared/js/script.js file
+function validateRegisterForm(userData) {
+  let isValid = true;
+  let errorMessage = "";
+
+  // Helper to show error notifications
+  function showFieldNotification(field, message) {
+    // You can enhance this to highlight the specific field
+    showNotification(message, "error");
+  }
+
+  // Check required fields (using existing validateForm if it can be adapted)
+  // For simplicity, let's re-implement basic checks for clarity here:
+  if (!userData.fullName.trim()) {
+    errorMessage += "Nama Lengkap tidak boleh kosong. ";
+    isValid = false;
+  }
+  if (!userData.email.trim()) {
+    errorMessage += "Email tidak boleh kosong. ";
+    isValid = false;
+  } else if (!validateEmail(userData.email)) {
+    errorMessage += "Format email tidak valid. ";
+    isValid = false;
+  }
+  if (!userData.phone.trim()) {
+    errorMessage += "No. Telepon tidak boleh kosong. ";
+    isValid = false;
+  } else if (!validatePhone(userData.phone)) {
+    errorMessage +=
+      "Format No. Telepon tidak valid (gunakan format Indonesia). ";
+    isValid = false;
+  }
+  if (!userData.address.trim()) {
+    errorMessage += "Alamat tidak boleh kosong. ";
+    isValid = false;
+  }
+  if (!userData.nik.trim()) {
+    errorMessage += "NIK tidak boleh kosong. ";
+    isValid = false;
+  } else if (!/^\d{16}$/.test(userData.nik)) {
+    errorMessage += "NIK harus 16 digit angka. ";
+    isValid = false;
+  }
+  if (!userData.username.trim()) {
+    errorMessage += "Username tidak boleh kosong. ";
+    isValid = false;
+  }
+  if (!userData.password.trim()) {
+    errorMessage += "Password tidak boleh kosong. ";
+    isValid = false;
+  } else if (userData.password.length < 6) {
+    // Align with shared/php/register_handler.php
+    errorMessage += "Password minimal 6 karakter. ";
+    isValid = false;
+  }
+  // Optional: Add stricter password complexity check here to match proses_register.php if desired
+  // else if (!/[A-Z]/.test(userData.password) || !/[a-z]/.test(userData.password) || !/[0-9]/.test(userData.password) || !/[^A-Za-z0-9]/.test(userData.password)) {
+  //   errorMessage += "Password harus berisi kombinasi huruf kapital, huruf kecil, angka, dan karakter khusus. ";
+  //   isValid = false;
+  // }
+
+  if (!userData.confirmPassword.trim()) {
+    errorMessage += "Konfirmasi Password tidak boleh kosong. ";
+    isValid = false;
+  } else if (userData.password !== userData.confirmPassword) {
+    errorMessage += "Konfirmasi Password tidak cocok dengan Password. ";
+    isValid = false;
+  }
+
+  if (!isValid) {
+    showNotification(errorMessage.trim(), "error");
+  }
+
+  return isValid;
+}
