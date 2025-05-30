@@ -31,7 +31,7 @@ include '../includes/header.php'; // Path from user/ to includes/
         <?php else: // Display a message if not logged in ?>
         <section class="not-logged-in-message">
             <h3>Anda Belum Login</h3>
-            <p>Silakan <a href="login.php">Masuk</a> atau <a href="register.php">Daftar</a> untuk membuat laporan dan melihat informasi akun Anda.</p>
+            <p>Silakan <a href="../login.html">Masuk</a> atau <a href="../register.html">Daftar</a> untuk membuat laporan dan melihat informasi akun Anda.</p>
         </section>
         <?php endif; ?>
 

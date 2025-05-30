@@ -1,17 +1,16 @@
 <?php
 // User-specific Operations Handler
-require_once 'config.php';
+// Location: FINAL_PROJECT-TIK2032/user/php/user_handler.php
+
+require_once 'config.php'; // Includes session_start() and Database class, etc.
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
+// Check if user is logged in (using the config's isLoggedIn function)
 function checkUserAccess() {
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
-    if (!isset($_SESSION['user_logged_in'])) {
+    if (!isLoggedIn()) { // Use isLoggedIn from config.php
         http_response_code(403);
-        echo json_encode(['error' => 'Access denied. Please login first.']);
+        echo json_encode(['error' => 'Akses ditolak. Silakan login terlebih dahulu.']); // Updated error message
         exit;
     }
 }
@@ -36,26 +35,27 @@ switch ($action) {
         getReportDetail();
         break;
     
-    case 'submit_report':
+    case 'submit_report': // This action is for creating a new report by a logged-in user
         submitReport();
         break;
     
     default:
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid action']);
+        echo json_encode(['error' => 'Aksi tidak valid']); // Updated error message
         break;
 }
 
 function getUserReports() {
-    checkUserAccess();
-    
+    checkUserAccess(); // Ensure user is logged in
+
     try {
-        $userEmail = $_SESSION['user_email'] ?? '';
+        // Use $_SESSION['user_id'] (from login_handler) to filter reports
+        $userId = $_SESSION['user_id'] ?? '';
         
-        if (empty($userEmail)) {
+        if (empty($userId)) {
             http_response_code(400);
-            echo json_encode(['error' => 'User email not found in session']);
-            return;
+            echo json_encode(['error' => 'ID Pengguna tidak ditemukan di sesi']); // Updated error message
+            exit; // Exit here to prevent further execution without user ID
         }
         
         $database = new Database();
@@ -64,8 +64,9 @@ function getUserReports() {
         $status = $_GET['status'] ?? '';
         $search = $_GET['search'] ?? '';
         
-        $query = "SELECT * FROM reports WHERE email = :email";
-        $params = [':email' => $userEmail];
+        // Select feedback_admin as well for display
+        $query = "SELECT id, judul, kategori, lokasi, status, created_at, feedback_admin FROM reports WHERE user_id = :user_id";
+        $params = [':user_id' => $userId];
         
         if (!empty($status)) {
             $query .= " AND status = :status";
@@ -77,55 +78,62 @@ function getUserReports() {
             $params[':search'] = '%' . $search . '%';
         }
         
-        $query .= " ORDER BY tanggal DESC";
+        $query .= " ORDER BY created_at DESC"; // Changed from tanggal to created_at
         
         $stmt = $conn->prepare($query);
         $stmt->execute($params);
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Format data (using functions from config.php)
+        foreach ($reports as &$report) {
+            $report['status_text'] = getStatusText($report['status']);
+            $report['category_text'] = getCategoryText($report['kategori']);
+            $report['formatted_date'] = formatDate($report['created_at']);
+        }
         
-        echo json_encode(['reports' => $reports]);
+        jsonResponse(['reports' => $reports]);
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to fetch user reports: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Gagal mengambil laporan pengguna: ' . $e->getMessage()]); // Updated error message
     }
 }
 
 function getUserStats() {
-    checkUserAccess();
+    checkUserAccess(); // Ensure user is logged in
     
     try {
-        $userEmail = $_SESSION['user_email'] ?? '';
+        $userId = $_SESSION['user_id'] ?? '';
         
-        if (empty($userEmail)) {
+        if (empty($userId)) {
             http_response_code(400);
-            echo json_encode(['error' => 'User email not found in session']);
-            return;
+            jsonResponse(['error' => 'ID Pengguna tidak ditemukan di sesi']); // Updated error message
+            exit;
         }
         
         $database = new Database();
         $conn = $database->getConnection();
         
         // Get total reports count for user
-        $stmt = $conn->prepare("SELECT COUNT(*) as total FROM reports WHERE email = :email");
-        $stmt->execute([':email' => $userEmail]);
+        $stmt = $conn->prepare("SELECT COUNT(*) as total FROM reports WHERE user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Get pending reports count for user
-        $stmt = $conn->prepare("SELECT COUNT(*) as pending FROM reports WHERE email = :email AND status = 'pending'");
-        $stmt->execute([':email' => $userEmail]);
+        $stmt = $conn->prepare("SELECT COUNT(*) as pending FROM reports WHERE user_id = :user_id AND status = 'pending'");
+        $stmt->execute([':user_id' => $userId]);
         $pending = $stmt->fetch(PDO::FETCH_ASSOC)['pending'];
         
         // Get in progress reports count for user
-        $stmt = $conn->prepare("SELECT COUNT(*) as in_progress FROM reports WHERE email = :email AND status = 'in_progress'");
-        $stmt->execute([':email' => $userEmail]);
+        $stmt = $conn->prepare("SELECT COUNT(*) as in_progress FROM reports WHERE user_id = :user_id AND status = 'in_progress'");
+        $stmt->execute([':user_id' => $userId]);
         $inProgress = $stmt->fetch(PDO::FETCH_ASSOC)['in_progress'];
         
         // Get completed reports count for user
-        $stmt = $conn->prepare("SELECT COUNT(*) as completed FROM reports WHERE email = :email AND status = 'completed'");
-        $stmt->execute([':email' => $userEmail]);
+        $stmt = $conn->prepare("SELECT COUNT(*) as completed FROM reports WHERE user_id = :user_id AND status = 'completed'");
+        $stmt->execute([':user_id' => $userId]);
         $completed = $stmt->fetch(PDO::FETCH_ASSOC)['completed'];
         
-        echo json_encode([
+        jsonResponse([
             'total' => $total,
             'pending' => $pending,
             'in_progress' => $inProgress,
@@ -133,20 +141,20 @@ function getUserStats() {
         ]);
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to fetch user stats: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Gagal mengambil statistik pengguna: ' . $e->getMessage()]); // Updated error message
     }
 }
 
 function deleteUserReport() {
-    checkUserAccess();
+    checkUserAccess(); // Ensure user is logged in
     
     try {
         $reportId = $_POST['reportId'] ?? '';
-        $userEmail = $_SESSION['user_email'] ?? '';
+        $userId = $_SESSION['user_id'] ?? ''; // Get user ID from session
         
-        if (empty($reportId)) {
+        if (empty($reportId) || empty($userId)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Report ID is required']);
+            jsonResponse(['error' => 'ID Laporan dan ID Pengguna diperlukan']); // Updated error message
             return;
         }
         
@@ -154,52 +162,51 @@ function deleteUserReport() {
         $conn = $database->getConnection();
         
         // Check if report belongs to user and is still pending
-        $stmt = $conn->prepare("SELECT status FROM reports WHERE id = :id AND email = :email");
-        $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
+        $stmt = $conn->prepare("SELECT status FROM reports WHERE id = :id AND user_id = :user_id"); // Filter by user_id
+        $stmt->execute([':id' => $reportId, ':user_id' => $userId]);
         $report = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$report) {
             http_response_code(404);
-            echo json_encode(['error' => 'Report not found or access denied']);
+            jsonResponse(['error' => 'Laporan tidak ditemukan atau akses ditolak']); // Updated error message
             return;
         }
         
         if ($report['status'] !== 'pending') {
             http_response_code(400);
-            echo json_encode(['error' => 'Only pending reports can be deleted']);
+            jsonResponse(['error' => 'Hanya laporan yang berstatus Menunggu yang dapat dihapus']); // Updated error message
             return;
         }
         
-        // Delete related comments first
-        $stmt = $conn->prepare("DELETE FROM comments WHERE report_id = :id");
+        // Delete related comments first (assuming 'report_comments' table)
+        $stmt = $conn->prepare("DELETE FROM report_comments WHERE report_id = :id"); // Assuming report_comments table name
         $stmt->execute([':id' => $reportId]);
         
         // Delete the report
-        $stmt = $conn->prepare("DELETE FROM reports WHERE id = :id AND email = :email");
-        $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
+        $stmt = $conn->prepare("DELETE FROM reports WHERE id = :id AND user_id = :user_id"); // Filter by user_id
+        $stmt->execute([':id' => $reportId, ':user_id' => $userId]);
         
         if ($stmt->rowCount() > 0) {
-            echo json_encode(['success' => true, 'message' => 'Report deleted successfully']);
+            jsonResponse(['success' => true, 'message' => 'Laporan berhasil dihapus']); // Updated message
         } else {
             http_response_code(404);
-            echo json_encode(['error' => 'Report not found']);
+            jsonResponse(['error' => 'Laporan tidak ditemukan atau tidak dimiliki oleh pengguna']); // Updated error message
         }
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to delete report: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Gagal menghapus laporan: ' . $e->getMessage()]); // Updated error message
     }
 }
 
 function getReportDetail() {
-    checkUserAccess();
+    checkUserAccess(); // Ensure user is logged in
     
     try {
         $reportId = $_GET['reportId'] ?? '';
-        $userEmail = $_SESSION['user_email'] ?? '';
-        
-        if (empty($reportId)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Report ID is required']);
+        $userId = $_SESSION['user_id'] ?? ''; // Get user ID from session
+
+        if (empty($reportId) || empty($userId)) {
+            jsonResponse(['error' => 'ID Laporan dan ID Pengguna diperlukan'], 400); // Updated error message
             return;
         }
         
@@ -207,75 +214,263 @@ function getReportDetail() {
         $conn = $database->getConnection();
         
         // Get report details - user can only view their own reports
-        $stmt = $conn->prepare("SELECT * FROM reports WHERE id = :id AND email = :email");
-        $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
+        // Select feedback_admin as well
+        $stmt = $conn->prepare("SELECT id, judul, kategori, lokasi, deskripsi, status, created_at, feedback_admin FROM reports WHERE id = :id AND user_id = :user_id"); // Filter by user_id
+        $stmt->execute([':id' => $reportId, ':user_id' => $userId]);
         $report = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$report) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Report not found or access denied']);
+            jsonResponse(['error' => 'Laporan tidak ditemukan atau akses ditolak'], 404); // Updated error message
             return;
         }
         
-        // Get comments for the report
-        $stmt = $conn->prepare("SELECT * FROM comments WHERE report_id = :id ORDER BY created_at ASC");
-        $stmt->execute([':id' => $reportId]);
-        $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Get comments for the report (assuming report_comments table name)
+        $stmt_comments = $conn->prepare("SELECT comment, created_at FROM report_comments WHERE report_id = :id ORDER BY created_at ASC");
+        $stmt_comments->execute([':id' => $reportId]);
+        $comments = $stmt_comments->fetchAll(PDO::FETCH_ASSOC);
         
-        echo json_encode([
+        // Format data (using functions from config.php)
+        $report['status_text'] = getStatusText($report['status']);
+        $report['category_text'] = getCategoryText($report['kategori']);
+        $report['formatted_date'] = formatDate($report['created_at']);
+
+        foreach ($comments as &$comment) {
+            $comment['formatted_date'] = formatDate($comment['created_at']);
+        }
+        
+        jsonResponse([
             'report' => $report,
             'comments' => $comments
         ]);
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to fetch report details: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Gagal mengambil detail laporan: ' . $e->getMessage()]); // Updated error message
     }
 }
 
+// This function will be called when a user submits a report from the form
 function submitReport() {
-    checkUserAccess();
-    
+    checkUserAccess(); // Ensure user is logged in
+
     try {
+        // Receive data either from JSON body (for AJAX) or $_POST (for standard form)
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            $input = $_POST;
+        }
         
-        $required_fields = ['nama', 'email', 'telepon', 'judul', 'kategori', 'lokasi', 'deskripsi'];
+        // Get user_id from session (crucial for linking report to user)
+        $userId = $_SESSION['user_id'] ?? ''; 
+        if (empty($userId)) {
+            jsonResponse(['error' => 'ID Pengguna tidak ditemukan di sesi. Silakan login kembali.'], 401); // Updated error message
+            return;
+        }
+
+        $database = new Database();
+        $conn = $database->getConnection();
+        
+        // Validate required fields
+        // Note: 'nama' and 'email' for reports will now come from session, not form
+        $required_fields = ['judul', 'kategori', 'lokasi', 'deskripsi']; // Removed nama, email, telepon
         foreach ($required_fields as $field) {
             if (empty($input[$field])) {
-                http_response_code(400);
-                echo json_encode(['error' => "Field '$field' is required"]);
+                jsonResponse(['error' => "Field '$field' is required"], 400); // Updated error message
                 return;
             }
         }
         
-        $database = new Database();
-        $conn = $database->getConnection();
-        
-        $reportId = generateId('RPT');
-        
+        // Get user's name and email from session for the report (more reliable)
+        $reporterName = $_SESSION['user_fullname'] ?? $_SESSION['user_username'] ?? '';
+        $reporterEmail = $_SESSION['user_email'] ?? '';
+        $reporterPhone = $_SESSION['user_phone'] ?? ''; // Assuming you store phone in session, or add it to users table
+
+        // Handle file upload if present (needs to be from $_FILES if form enctype is multipart/form-data)
+        $fotoBuktiPath = null;
+        // Check for file upload (assuming 'foto_bukti' is the name of the file input)
+        if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = UPLOAD_PATH; // UPLOAD_PATH defined in config.php
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $fileName = uniqid() . '_' . basename($_FILES['foto_bukti']['name']);
+            $targetFilePath = $uploadDir . $fileName;
+            if (move_uploaded_file($_FILES['foto_bukti']['tmp_name'], $targetFilePath)) {
+                $fotoBuktiPath = $targetFilePath;
+            } else {
+                jsonResponse(['error' => 'Gagal mengunggah foto.'], 500); // Updated error message
+                return;
+            }
+        }
+
+        // Generate report ID using the database function (if implemented) or PHP
+        $reportId = generateId('RPT'); // Using generateId from config.php
+
         $stmt = $conn->prepare("
-            INSERT INTO reports (id, nama, email, telepon, judul, kategori, lokasi, deskripsi, status, tanggal) 
-            VALUES (:id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi, 'pending', NOW())
+            INSERT INTO reports (id, user_id, nama, email, telepon, judul, kategori, lokasi, deskripsi, foto_bukti, status, created_at) 
+            VALUES (:id, :user_id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi, :foto_bukti, 'pending', NOW())
         ");
         
         $stmt->execute([
             ':id' => $reportId,
-            ':nama' => sanitize($input['nama']),
-            ':email' => sanitize($input['email']),
-            ':telepon' => sanitize($input['telepon']),
+            ':user_id' => $userId, // Link report to user
+            ':nama' => sanitize($reporterName),
+            ':email' => sanitize($reporterEmail),
+            ':telepon' => sanitize($reporterPhone), 
             ':judul' => sanitize($input['judul']),
             ':kategori' => sanitize($input['kategori']),
             ':lokasi' => sanitize($input['lokasi']),
-            ':deskripsi' => sanitize($input['deskripsi'])
+            ':deskripsi' => sanitize($input['deskripsi']),
+            ':foto_bukti' => $fotoBuktiPath,
+            ':status' => 'pending' // Initial status
         ]);
         
-        echo json_encode([
+        jsonResponse([
             'success' => true,
-            'message' => 'Report submitted successfully',
+            'message' => 'Laporan berhasil dibuat', // Updated message
             'reportId' => $reportId
         ]);
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to submit report: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Gagal mengirim laporan: ' . $e->getMessage()]); // Updated error message
     }
 }
 ?>
+```
+
+
+#### **3. `index.html` (Form and AJAX Call)**
+
+This is your main page with the report creation form. We need to ensure the form has `enctype="multipart/form-data"` and that the JavaScript is prepared to send the data (including file) via AJAX.
+
+
+```html
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laporan Aduan Masyarakat</title>
+    <link rel="stylesheet" href="shared/css/style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <h2>Aduan Masyarakat</h2>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link active">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="about.html" class="nav-link">About</a>
+          </li>
+          <li class="nav-item">
+            <a href="login.html" class="nav-link">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="register.html" class="nav-link">Register</a>
+          </li>
+        </ul>
+        <div class="hamburger">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div class="container">
+          <h1>Sistem Laporan Aduan Masyarakat</h1>
+          <p>
+            Laporkan keluhan dan saran Anda untuk pembangunan yang lebih baik
+          </p>
+          <a href="#laporan" class="btn btn-primary">Buat Laporan</a>
+        </div>
+      </section>
+
+      <section id="laporan" class="form-section">
+        <div class="container">
+          <h2>Form Laporan Aduan</h2>
+          <form id="reportForm" class="report-form" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="judul">Judul Aduan</label>
+              <input type="text" id="judul" name="judul" required />
+            </div>
+
+            <div class="form-group">
+              <label for="kategori">Kategori Aduan</label>
+              <select id="kategori" name="kategori" required>
+                <option value="">Pilih Kategori</option>
+                <option value="infrastruktur">Infrastruktur</option>
+                <option value="lingkungan">Lingkungan</option>
+                <option value="sosial">Sosial</option>
+                <option value="ekonomi">Ekonomi</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="lokasi">Lokasi Kejadian</label>
+              <input type="text" id="lokasi" name="lokasi" required />
+            </div>
+            
+            <div class="form-group">
+              <label for="deskripsi">Deskripsi Aduan</label>
+              <textarea
+                id="deskripsi"
+                name="deskripsi"
+                rows="5"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="foto_bukti">Upload Foto Bukti (Opsional)</label>
+              <input type="file" id="foto_bukti" name="foto_bukti" accept="image/*" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Kirim Laporan</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="container">
+          <h2>Mengapa Menggunakan Sistem Ini?</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <i class="fas fa-fast-forward"></i>
+              <h3>Cepat & Mudah</h3>
+              <p>Proses pelaporan yang simpel dan tidak ribet</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-shield-alt"></i>
+              <h3>Aman & Terpercaya</h3>
+              <p>Data Anda akan dijaga kerahasiaannya</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-clock"></i>
+              <h3>Respon Cepat</h3>
+              <p>Tim kami akan merespon laporan Anda dengan segera</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="shared/js/script.js"></script>
+  </body>
+</html>

@@ -1,6 +1,8 @@
 <?php
 // Registration Handler
-require_once 'config.php';
+// Location: FINAL_PROJECT-TIK2032/shared/php/register_handler.php
+
+require_once 'config.php'; // Includes session_start() and Database class, etc.
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -19,42 +21,35 @@ if ($method === 'POST') {
 
 function registerUser() {
     try {
-        // Get input data
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!$input) {
-            // Try to get from POST data
-            $input = $_POST;
+            $input = $_POST; // Fallback for x-www-form-urlencoded
         }
         
         // Validate required fields
         $required = ['fullName', 'email', 'phone', 'address', 'nik', 'username', 'password'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
-                http_response_code(400);
-                echo json_encode(['error' => "Field '$field' is required"]);
-                return;
+                jsonResponse(['error' => "Field '$field' is required"], 400);
             }
         }
         
         // Validate email format
         if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid email format']);
+            jsonResponse(['error' => 'Invalid email format'], 400);
             return;
         }
         
         // Validate NIK (16 digits)
         if (!preg_match('/^\d{16}$/', $input['nik'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'NIK must be 16 digits']);
+            jsonResponse(['error' => 'NIK must be 16 digits'], 400);
             return;
         }
         
         // Validate password length
         if (strlen($input['password']) < 6) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Password must be at least 6 characters']);
+            jsonResponse(['error' => 'Password must be at least 6 characters'], 400);
             return;
         }
         
@@ -65,8 +60,7 @@ function registerUser() {
         $stmt = $conn->prepare("SELECT id FROM users WHERE username = :username");
         $stmt->execute([':username' => $input['username']]);
         if ($stmt->fetch()) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Username already exists']);
+            jsonResponse(['error' => 'Username already exists'], 409);
             return;
         }
         
@@ -74,8 +68,7 @@ function registerUser() {
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = :email");
         $stmt->execute([':email' => $input['email']]);
         if ($stmt->fetch()) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Email already registered']);
+            jsonResponse(['error' => 'Email already registered'], 409);
             return;
         }
         
@@ -83,16 +76,17 @@ function registerUser() {
         $stmt = $conn->prepare("SELECT id FROM users WHERE nik = :nik");
         $stmt->execute([':nik' => $input['nik']]);
         if ($stmt->fetch()) {
-            http_response_code(409);
-            echo json_encode(['error' => 'NIK already registered']);
+            jsonResponse(['error' => 'NIK already registered'], 409);
             return;
         }
         
         // Hash password for security
         $hashedPassword = password_hash($input['password'], PASSWORD_DEFAULT);
         
-        // Generate user ID
-        $userId = 'USR' . time() . rand(100, 999);
+        // Generate user ID using the database function (if applicable, or a PHP generateId)
+        // Note: Your database.sql has a GenerateReportId function, but not a GenerateUserId function.
+        // Let's use a PHP based ID generation for consistency with existing JS.
+        $userId = 'USR' . time() . rand(100, 999); 
         
         // Insert new user
         $stmt = $conn->prepare("
@@ -109,8 +103,8 @@ function registerUser() {
             ':phone' => $input['phone'],
             ':address' => $input['address'],
             ':nik' => $input['nik'],
-            ':registeredDate' => date('Y-m-d H:i:s'),
-            ':role' => 'user',
+            ':registeredDate' => date('Y-m-d H:i:s'), // Current timestamp
+            ':role' => 'user', // Default role for new registrations
             ':status' => 'active'
         ]);
         

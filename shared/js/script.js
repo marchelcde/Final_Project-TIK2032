@@ -35,37 +35,56 @@ document.addEventListener("DOMContentLoaded", function () {
   if (registerForm) {
     registerForm.addEventListener("submit", handleRegister);
   }
-});
 
-// Handle Report Form Submission
+  // Initialize demo data if none exists
+  initializeDemoData();
+}); // This closes the DOMContentLoaded listener
+
+// Smooth scrolling for anchor links
+document.addEventListener("click", function (e) {
+  if (e.target.matches('a[href^="#"]')) {
+    e.preventDefault();
+    const target = document.querySelector(e.target.getAttribute("href"));
+    if (target) {
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }
+}); // Correctly closes the click event listener. This is the last character for this listener.
+
+// Handle Report Form Submission (AJAX to PHP handler)
 function handleReportSubmission(e) {
   e.preventDefault();
 
-  const formData = new FormData(e.target);
-  const reportData = {
-    nama: formData.get("nama"),
-    email: formData.get("email"),
-    telepon: formData.get("telepon"),
-    kategori: formData.get("kategori"),
-    judul: formData.get("judul"),
-    deskripsi: formData.get("deskripsi"),
-    lokasi: formData.get("lokasi"),
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "pending",
-    id: generateReportId(),
-  };
+  const form = e.target;
+  const formData = new FormData(form); // FormData handles file uploads automatically
 
-  // Simpan ke localStorage (simulasi database)
-  saveReport(reportData);
+  // Show loading notification
+  showNotification("Mengirim laporan...", "info");
 
-  // Show success message
-  showNotification(
-    "Laporan berhasil dikirim! ID Laporan: " + reportData.id,
-    "success"
-  );
-
-  // Reset form
-  e.target.reset();
+  // Send report data to PHP handler
+  fetch("user/php/user_handler.php?action=submit_report", {
+    method: "POST",
+    body: formData, // FormData directly as body, fetch sets Content-Type automatically
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        showNotification(
+          data.message + " ID Laporan: " + data.reportId,
+          "success"
+        );
+        form.reset(); // Reset form on success
+      } else {
+        showNotification(data.error || "Gagal mengirim laporan", "error");
+      }
+    })
+    .catch((error) => {
+      console.error("Report submission error:", error);
+      showNotification("Terjadi kesalahan saat mengirim laporan", "error");
+    });
 }
 
 // Handle Login
@@ -96,10 +115,15 @@ function handleLogin(e) {
         sessionStorage.setItem("userLoggedIn", "true");
         sessionStorage.setItem("userRole", data.user.role);
         sessionStorage.setItem("userEmail", data.user.email);
-        sessionStorage.setItem("currentUser", JSON.stringify(data.user));
+        sessionStorage.setItem("userId", data.user.id); // Store user ID
+        sessionStorage.setItem("userName", data.user.fullName); // Store user's full name
+        sessionStorage.setItem("currentUser", JSON.stringify(data.user)); // Store full user object
 
         // Show success message
-        showNotification(`Welcome ${data.user.fullName}!`, "success");
+        showNotification(
+          `Welcome ${data.user.fullName || data.user.username}!`,
+          "success"
+        );
 
         // Redirect based on role
         if (data.user.role === "admin") {
@@ -118,74 +142,8 @@ function handleLogin(e) {
     })
     .catch((error) => {
       console.error("Login error:", error);
-      // Fallback to localStorage authentication
-      handleLoginFallback(username, password);
+      showNotification("Terjadi kesalahan jaringan saat login", "error");
     });
-}
-
-// Fallback login using localStorage
-function handleLoginFallback(username, password) {
-  // Simple authentication check for default accounts
-  if (username === "admin" && password === "admin123") {
-    // Set session for admin
-    sessionStorage.setItem("userLoggedIn", "true");
-    sessionStorage.setItem("userRole", "admin");
-    sessionStorage.setItem("userEmail", "admin@gmail.com");
-    sessionStorage.setItem(
-      "currentUser",
-      JSON.stringify({
-        username: "admin",
-        fullName: "Administrator",
-        role: "admin",
-        email: "admin@gmail.com",
-      })
-    );
-    showNotification("Welcome Administrator!", "success");
-    setTimeout(() => {
-      window.location.href = "admin/admin-dashboard.html";
-    }, 1000);
-    return;
-  }
-
-  if (username === "user" && password === "user123") {
-    // Set session for default user
-    sessionStorage.setItem("userLoggedIn", "true");
-    sessionStorage.setItem("userRole", "user");
-    sessionStorage.setItem("userEmail", "user@gmail.com");
-    sessionStorage.setItem(
-      "currentUser",
-      JSON.stringify({
-        username: "user",
-        fullName: "Demo User",
-        role: "user",
-        email: "user@gmail.com",
-      })
-    );
-    showNotification("Welcome Demo User!", "success");
-    setTimeout(() => {
-      window.location.href = "user/user-dashboard.html";
-    }, 1000);
-    return;
-  }
-
-  // Check registered users from localStorage
-  const users = getUsers();
-  const user = users.find(
-    (u) => u.username === username && u.password === password
-  );
-
-  if (user) {
-    sessionStorage.setItem("userLoggedIn", "true");
-    sessionStorage.setItem("userRole", "user");
-    sessionStorage.setItem("userEmail", user.email);
-    sessionStorage.setItem("currentUser", JSON.stringify(user));
-    showNotification(`Welcome ${user.fullName}!`, "success");
-    setTimeout(() => {
-      window.location.href = "user/user-dashboard.html";
-    }, 1000);
-  } else {
-    showNotification("Username atau password salah!", "error");
-  }
 }
 
 // Handle Register
@@ -215,9 +173,10 @@ function handleRegister(e) {
   fetch("shared/php/register_handler.php", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json", // This implies JSON body
     },
     body: JSON.stringify({
+      // So we stringify here
       fullName: userData.fullName,
       email: userData.email,
       phone: userData.phone,
@@ -239,126 +198,11 @@ function handleRegister(e) {
     })
     .catch((error) => {
       console.error("Registration error:", error);
-      // Fallback to localStorage if database fails
-      handleRegistrationFallback(userData);
+      showNotification("Terjadi kesalahan jaringan saat mendaftar", "error");
     });
 
   // Reset form
   e.target.reset();
-}
-
-// Fallback registration using localStorage
-function handleRegistrationFallback(userData) {
-  // Check if username already exists in localStorage
-  const users = getUsers();
-  if (users.find((u) => u.username === userData.username)) {
-    showNotification("Username sudah digunakan! Pilih username lain.", "error");
-    return;
-  }
-
-  // Check if email already exists in localStorage
-  if (users.find((u) => u.email === userData.email)) {
-    showNotification("Email sudah terdaftar! Gunakan email lain.", "error");
-    return;
-  }
-
-  // Save user to localStorage as fallback
-  const userToSave = {
-    ...userData,
-    userId: generateUserId(),
-    registeredDate: new Date().toISOString().split("T")[0],
-  };
-  delete userToSave.confirmPassword;
-
-  saveUser(userToSave);
-  showRegistrationSuccess(userData.username);
-}
-
-// Generate unique report ID
-function generateReportId() {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `RPT${timestamp}${random}`;
-}
-
-// Generate unique user ID
-function generateUserId() {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `USR${timestamp}${random}`;
-}
-
-// Save report to localStorage
-function saveReport(reportData) {
-  let reports = JSON.parse(localStorage.getItem("reports") || "[]");
-  reports.push(reportData);
-  localStorage.setItem("reports", JSON.stringify(reports));
-}
-
-// Get all reports from localStorage
-function getReports() {
-  return JSON.parse(localStorage.getItem("reports") || "[]");
-}
-
-// Save user to localStorage
-function saveUser(userData) {
-  let users = JSON.parse(localStorage.getItem("users") || "[]");
-  // Remove confirmPassword before saving
-  const { confirmPassword, agreeTerms, ...userToSave } = userData;
-  users.push(userToSave);
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-// Get all users from localStorage
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users") || "[]");
-}
-
-// Validate register form
-function validateRegisterForm(userData) {
-  // Check required fields
-  if (
-    !userData.fullName ||
-    !userData.email ||
-    !userData.phone ||
-    !userData.address ||
-    !userData.nik ||
-    !userData.username ||
-    !userData.password
-  ) {
-    showNotification("Semua field harus diisi!", "error");
-    return false;
-  }
-
-  // Check email format
-  if (!validateEmail(userData.email)) {
-    showNotification("Format email tidak valid!", "error");
-    return false;
-  }
-
-  // Check phone format
-  if (!validatePhone(userData.phone)) {
-    showNotification("Format nomor telepon tidak valid!", "error");
-    return false;
-  }
-
-  // Check NIK (16 digits)
-  if (!/^\d{16}$/.test(userData.nik)) {
-    showNotification("NIK harus 16 digit angka!", "error");
-    return false;
-  }
-
-  // Check password length
-  if (userData.password.length < 6) {
-    showNotification("Password minimal 6 karakter!", "error");
-    return false;
-  }
-  // Check password confirmation
-  if (userData.password !== userData.confirmPassword) {
-    showNotification("Konfirmasi password tidak cocok!", "error");
-    return false;
-  }
-  return true;
 }
 
 // Show registration success with account creation indicator
@@ -574,20 +418,6 @@ function showNotification(message, type = "info") {
     }
   }, 5000);
 }
-
-// Smooth scrolling for anchor links
-document.addEventListener("click", function (e) {
-  if (e.target.matches('a[href^="#"]')) {
-    e.preventDefault();
-    const target = document.querySelector(e.target.getAttribute("href"));
-    if (target) {
-      target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  }
-});
 
 // Form validation enhancement
 function validateForm(form) {
