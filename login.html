@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Laporan Aduan Masyarakat</title>
+    <link rel="stylesheet" href="shared/css/style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <h2>Aduan Masyarakat</h2>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="about.html" class="nav-link">About</a>
+          </li>
+          <li class="nav-item">
+            <a href="login.html" class="nav-link active">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="register.html" class="nav-link">Register</a>
+          </li>
+        </ul>
+        <div class="hamburger">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="login-section">
+        <div class="container">
+          <div class="login-container">
+            <div class="login-form">
+              <h2>Login</h2>
+              <p>Masuk ke dashboard admin</p>
+
+              <form id="loginForm">
+                <div class="form-group">
+                  <label for="username">Username</label>
+                  <input type="text" id="username" name="username" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">
+                  Login
+                </button>
+              </form>
+
+              <div class="register-link">
+                <p>
+                  Belum punya akun? <a href="register.html">Daftar di sini</a>
+                </p>
+              </div>
+
+              <div class="login-info">
+                <h3>Demo Credentials:</h3>
+                <p><strong>Admin:</strong> admin / admin123</p>
+                <p><strong>User:</strong> user / user123</p>
+              </div>
+            </div>
+
+            <div class="login-image">
+              <div class="image-placeholder">
+                <i class="fas fa-user-shield"></i>
+                <h3>Secure Access</h3>
+                <p>Login untuk mengakses dashboard dan mengelola laporan</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="shared/js/script.js"></script>
+  </body>
+</html>
