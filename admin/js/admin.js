@@ -612,5 +612,45 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("id-ID", options);
 }
 
+// Function to show/toggle the user profile modal (adapted for admin context)
+function showUserProfileModal() {
+  const userProfileModal = document.getElementById("userProfileModal");
+  const profileFullName = document.getElementById("profileFullName");
+  const profileUsername = document.getElementById("profileUsername");
+  const profileEmail = document.getElementById("profileEmail");
+
+  // Toggle display based on current state
+  if (userProfileModal.style.display === "block") {
+    userProfileModal.style.display = "none"; // Hide if already visible
+    return; // Exit function
+  }
+
+  // If not visible, populate and show it
+  const fullName = sessionStorage.getItem("userName") || "N/A";
+  const email = sessionStorage.getItem("userEmail") || "N/A";
+
+  let username = "N/A";
+  const currentUserString = sessionStorage.getItem("currentUser");
+  if (currentUserString) {
+    try {
+      const currentUser = JSON.parse(currentUserString);
+      username = currentUser.username || "N/A";
+    } catch (e) {
+      console.error("Error parsing currentUser from sessionStorage:", e);
+    }
+  }
+
+  profileFullName.textContent = fullName;
+  profileUsername.textContent = username;
+  profileEmail.textContent = email;
+
+  userProfileModal.style.display = "block"; // Show the modal
+}
+
+// Function to close the user profile modal
+function closeUserProfileModal() {
+  const userProfileModal = document.getElementById("userProfileModal");
+  userProfileModal.style.display = "none";
+}
 // showNotification function is assumed to be available from shared/js/script.js
 // If not, ensure shared/js/script.js is loaded first, or redefine it here.

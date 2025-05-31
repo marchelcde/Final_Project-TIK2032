@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 // Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'aduan_masyarakat');
@@ -31,7 +29,8 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->exec("set names utf8");
         } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
+            // CHANGE THIS LINE: Instead of echoing, throw an exception
+            throw new Exception("Database connection error: " . $exception->getMessage(), 0, $exception);
         }
         return $this->conn;
     }

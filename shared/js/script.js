@@ -4,20 +4,22 @@ document.addEventListener("DOMContentLoaded", function () {
   const navMenu = document.querySelector(".nav-menu");
 
   if (hamburger && navMenu) {
+    // This condition correctly wraps all mobile nav code
     hamburger.addEventListener("click", function () {
       hamburger.classList.toggle("active");
       navMenu.classList.toggle("active");
     });
-  }
 
-  // Close mobile menu when clicking on a link
-  const navLinks = document.querySelectorAll(".nav-link");
-  navLinks.forEach((link) => {
-    link.addEventListener("click", () => {
-      hamburger.classList.remove("active");
-      navMenu.classList.remove("active");
+    // Close mobile menu when clicking on a link
+    // This part is now correctly nested inside the 'if' block
+    const navLinks = document.querySelectorAll(".nav-link");
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        hamburger.classList.remove("active");
+        navMenu.classList.remove("active");
+      });
     });
-  });
+  } // End of the 'if (hamburger && navMenu)' block
 
   // Form Submission Handler for the main index.html form (if still used)
   const reportForm = document.getElementById("reportForm");
@@ -45,7 +47,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize demo data if none exists
   initializeDemoData();
-}); // This closes the DOMContentLoaded listener
+}); // This is the single closing for the DOMContentLoaded function and listener.
+
+// ... The rest of your script.js file (e.g., smooth scrolling, utility functions) should follow here ...
+// DO NOT include any duplicate or extra 'DOMContentLoaded' blocks or standalone '}' characters.
 
 // Smooth scrolling for anchor links (Modified to handle href="#")
 document.addEventListener("click", function (e) {
@@ -609,4 +614,66 @@ function validateRegisterForm(userData) {
   }
 
   return isValid;
+}
+
+// Add this function to admin.js (and user-dashboard.js)
+function handleChangePasswordFrontend() {
+  const oldPassword = document.getElementById("oldPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmNewPassword =
+    document.getElementById("confirmNewPassword").value;
+
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    showNotification("Semua field kata sandi harus diisi.", "error");
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    showNotification(
+      "Kata sandi baru dan konfirmasi kata sandi tidak cocok.",
+      "error"
+    );
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showNotification("Kata sandi baru minimal 6 karakter.", "error");
+    return;
+  }
+
+  showNotification("Mengubah kata sandi...", "info");
+
+  fetch("../shared/php/auth.php", {
+    // Path to the shared auth handler
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "change_password",
+      old_password: oldPassword,
+      new_password: newPassword,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        showNotification(data.message, "success");
+        // Clear password fields on success
+        document.getElementById("oldPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmNewPassword").value = "";
+        // Optionally close modal or reload profile details
+        closeUserProfileModal();
+      } else {
+        showNotification(data.error || "Gagal mengubah kata sandi.", "error");
+      }
+    })
+    .catch((error) => {
+      console.error("Change password error:", error);
+      showNotification(
+        "Terjadi kesalahan jaringan saat mengubah kata sandi.",
+        "error"
+      );
+    });
 }

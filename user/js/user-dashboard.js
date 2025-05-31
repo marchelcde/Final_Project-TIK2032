@@ -472,3 +472,65 @@ function getReports() {
     return [];
   }
 }
+
+// Add this function to admin.js (and user-dashboard.js)
+function handleChangePasswordFrontend() {
+  const oldPassword = document.getElementById("oldPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmNewPassword =
+    document.getElementById("confirmNewPassword").value;
+
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    showNotification("Semua field kata sandi harus diisi.", "error");
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    showNotification(
+      "Kata sandi baru dan konfirmasi kata sandi tidak cocok.",
+      "error"
+    );
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showNotification("Kata sandi baru minimal 6 karakter.", "error");
+    return;
+  }
+
+  showNotification("Mengubah kata sandi...", "info");
+
+  fetch("../shared/php/auth.php", {
+    // Path to the shared auth handler
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "change_password",
+      old_password: oldPassword,
+      new_password: newPassword,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        showNotification(data.message, "success");
+        // Clear password fields on success
+        document.getElementById("oldPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmNewPassword").value = "";
+        // Optionally close modal or reload profile details
+        closeUserProfileModal();
+      } else {
+        showNotification(data.error || "Gagal mengubah kata sandi.", "error");
+      }
+    })
+    .catch((error) => {
+      console.error("Change password error:", error);
+      showNotification(
+        "Terjadi kesalahan jaringan saat mengubah kata sandi.",
+        "error"
+      );
+    });
+}
