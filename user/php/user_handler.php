@@ -260,7 +260,7 @@ function submitReport() {
         }
         
         // Get user_id from session (crucial for linking report to user)
-        $userId = $_SESSION['user_id'] ?? ''; 
+        $userId = $_SESSION['user_id'] ?? '';
         if (empty($userId)) {
             jsonResponse(['error' => 'ID Pengguna tidak ditemukan di sesi. Silakan login kembali.'], 401); // Updated error message
             return;
@@ -270,7 +270,6 @@ function submitReport() {
         $conn = $database->getConnection();
         
         // Validate required fields
-        // Note: 'nama' and 'email' for reports will now come from session, not form
         $required_fields = ['judul', 'kategori', 'lokasi', 'deskripsi']; // Removed nama, email, telepon
         foreach ($required_fields as $field) {
             if (empty($input[$field])) {
@@ -284,30 +283,19 @@ function submitReport() {
         $reporterEmail = $_SESSION['user_email'] ?? '';
         $reporterPhone = $_SESSION['user_phone'] ?? ''; // Assuming you store phone in session, or add it to users table
 
-        // Handle file upload if present (needs to be from $_FILES if form enctype is multipart/form-data)
-        $fotoBuktiPath = null;
-        // Check for file upload (assuming 'foto_bukti' is the name of the file input)
-        if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = UPLOAD_PATH; // UPLOAD_PATH defined in config.php
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $fileName = uniqid() . '_' . basename($_FILES['foto_bukti']['name']);
-            $targetFilePath = $uploadDir . $fileName;
-            if (move_uploaded_file($_FILES['foto_bukti']['tmp_name'], $targetFilePath)) {
-                $fotoBuktiPath = $targetFilePath;
-            } else {
-                jsonResponse(['error' => 'Gagal mengunggah foto.'], 500); // Updated error message
-                return;
-            }
-        }
+        // --- START: Removed foto_bukti handling ---
+        // The file upload handling block for foto_bukti is removed here.
+        // --- END: Removed foto_bukti handling ---
 
         // Generate report ID using the database function (if implemented) or PHP
         $reportId = generateId('RPT'); // Using generateId from config.php
 
+        // CORRECTED INSERT statement and execute array
+        // foto_bukti column is explicitly removed from the INSERT statement and values.
+        // 'status', 'created_at', 'updated_at' will use their DEFAULT values from database.sql
         $stmt = $conn->prepare("
-            INSERT INTO reports (id, user_id, nama, email, telepon, judul, kategori, lokasi, deskripsi, foto_bukti, status, created_at) 
-            VALUES (:id, :user_id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi, :foto_bukti, 'pending', NOW())
+            INSERT INTO reports (id, user_id, nama, email, telepon, judul, kategori, lokasi, deskripsi)
+            VALUES (:id, :user_id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi)
         ");
         
         $stmt->execute([
@@ -315,13 +303,12 @@ function submitReport() {
             ':user_id' => $userId, // Link report to user
             ':nama' => sanitize($reporterName),
             ':email' => sanitize($reporterEmail),
-            ':telepon' => sanitize($reporterPhone), 
+            ':telepon' => sanitize($reporterPhone),
             ':judul' => sanitize($input['judul']),
             ':kategori' => sanitize($input['kategori']),
             ':lokasi' => sanitize($input['lokasi']),
-            ':deskripsi' => sanitize($input['deskripsi']),
-            ':foto_bukti' => $fotoBuktiPath,
-            ':status' => 'pending' // Initial status
+            ':deskripsi' => sanitize($input['deskripsi'])
+            // Removed ':foto_bukti' from here
         ]);
         
         jsonResponse([

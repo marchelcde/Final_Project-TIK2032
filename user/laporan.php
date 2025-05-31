@@ -158,7 +158,7 @@ include 'includes/header.php'; // Path from root to includes/
         </div>
     </footer>
 
-    <script src="shared/js/script.js"></script>
+    <script src="../shared/js/script.js"></script>
 
 <?php
 // Assuming 'includes' directory is a direct sibling to 'laporan.php'

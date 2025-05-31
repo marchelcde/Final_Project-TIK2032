@@ -74,7 +74,7 @@ function handleReportSubmission(e) {
   // Determine the correct PHP handler based on the form's ID or context
   // Since both index.html and laporan.php (for logged-in users) use user/php/user_handler.php
   // for submission, this URL remains consistent.
-  fetch("user/php/user_handler.php?action=submit_report", {
+  fetch("../user/php/user_handler.php?action=submit_report", {
     method: "POST",
     body: formData, // FormData directly as body, fetch sets Content-Type automatically
   })
