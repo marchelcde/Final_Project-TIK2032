@@ -15,9 +15,6 @@ $userName = $_SESSION['user_fullname'] ?? 'N/A';
 $userUsername = $_SESSION['user_username'] ?? 'N/A';
 $userEmail = $_SESSION['user_email'] ?? 'N/A';
 
-// Include header.php and footer.php. Adjust paths based on their actual location relative to laporan.php.
-// Assuming 'includes' directory is a direct sibling to 'laporan.php'
-include 'includes/header.php'; // Path from root to includes/
 
 ?>
 <!DOCTYPE html>
@@ -26,8 +23,10 @@ include 'includes/header.php'; // Path from root to includes/
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SLM - Sistem Laporan Masyarakat</title>
-    <link rel="stylesheet" href="shared/css/style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/css/style.css"> <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
 </head>
 <body data-logged-in="<?php echo $isLoggedIn ? 'true' : 'false'; ?>">
     <header>
@@ -37,15 +36,8 @@ include 'includes/header.php'; // Path from root to includes/
                     <h2>SLM</h2>
                 </div>
                 <ul class="nav-menu">
-                    <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
-                    <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
-                    <?php if (!$isLoggedIn): ?>
-                        <li class="nav-item"><a href="login.html" class="nav-link">Login</a></li>
-                        <li class="nav-item"><a href="register.html" class="nav-link">Register</a></li>
-                    <?php else: ?>
-                        <li class="nav-item"><a href="<?php echo ($userRole === 'admin') ? 'admin/admin-dashboard.html' : 'user/user-dashboard.html'; ?>" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                        <li class="nav-item"><a href="logout.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                    <?php endif; ?>
+                    <li class="nav-item"><a href="user-dashboard.html" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="logout.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
                 <div class="hamburger">
                     <span class="bar"></span>
@@ -143,9 +135,9 @@ include 'includes/header.php'; // Path from root to includes/
 
         <section class="stats">
             <h3>Statistik Laporan</h3>
-            <p>Total Laporan Masuk: <strong>150</strong></p>
-            <p>Laporan Diproses: <strong>75</strong></p>
-            <p>Laporan Selesai: <strong>60</strong></p>
+            <p>Total Laporan Masuk: <strong id="totalReportsCount">Memuat...</strong></p>
+            <p>Laporan Diproses: <strong id="inProgressReportsCount">Memuat...</strong></p>
+            <p>Laporan Selesai: <strong id="completedReportsCount">Memuat...</strong></p>
         </section>
     </main>
     <div id="popup-overlay"></div>
@@ -160,9 +152,48 @@ include 'includes/header.php'; // Path from root to includes/
 
     <script src="../shared/js/script.js"></script>
 
-<?php
-// Assuming 'includes' directory is a direct sibling to 'laporan.php'
-include 'includes/footer.php';
-?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // This code will run if elements with these IDs exist on the page (e.g., on laporan.php)
+            if (document.getElementById('totalReportsCount') &&
+                document.getElementById('inProgressReportsCount') &&
+                document.getElementById('completedReportsCount')) {
+                
+                fetch('../shared/php/report_handler.php?action=stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data) {
+                            const totalReports = data.data.total;
+                            let inProgress = 0;
+                            let completed = 0;
+
+                            // Find counts for 'in_progress' and 'completed' statuses
+                            data.data.by_status.forEach(statusStat => {
+                                if (statusStat.status === 'in_progress') {
+                                    inProgress = statusStat.count;
+                                } else if (statusStat.status === 'completed') {
+                                    completed = statusStat.count;
+                                }
+                            });
+
+                            document.getElementById('totalReportsCount').textContent = totalReports;
+                            document.getElementById('inProgressReportsCount').textContent = inProgress;
+                            document.getElementById('completedReportsCount').textContent = completed;
+                        } else {
+                            console.error('Failed to fetch report stats:', data.error || 'Unknown error');
+                            document.getElementById('totalReportsCount').textContent = 'N/A';
+                            document.getElementById('inProgressReportsCount').textContent = 'N/A';
+                            document.getElementById('completedReportsCount').textContent = 'N/A';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching report stats:', error);
+                        document.getElementById('totalReportsCount').textContent = 'Error';
+                        document.getElementById('inProgressReportsCount').textContent = 'Error';
+                        document.getElementById('completedReportsCount').textContent = 'Error';
+                    });
+            }
+        });
+    </script>
 </body>
 </html>

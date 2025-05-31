@@ -49,7 +49,7 @@ function getUserReports() {
     checkUserAccess(); // Ensure user is logged in
 
     try {
-        // Use $_SESSION['user_id'] (from login_handler) to filter reports
+        // Use $_SESSION['user_id'] to filter reports
         $userId = $_SESSION['user_id'] ?? '';
         
         if (empty($userId)) {
@@ -64,8 +64,8 @@ function getUserReports() {
         $status = $_GET['status'] ?? '';
         $search = $_GET['search'] ?? '';
         
-        // Select feedback_admin as well for display
-        $query = "SELECT id, judul, kategori, lokasi, status, created_at, feedback_admin FROM reports WHERE user_id = :user_id";
+        // Select foto_bukti and feedback_admin as well for display
+        $query = "SELECT id, judul, kategori, lokasi, status, created_at, feedback_admin, foto_bukti FROM reports WHERE user_id = :user_id";
         $params = [':user_id' => $userId];
         
         if (!empty($status)) {
@@ -78,7 +78,7 @@ function getUserReports() {
             $params[':search'] = '%' . $search . '%';
         }
         
-        $query .= " ORDER BY created_at DESC"; // Changed from tanggal to created_at
+        $query .= " ORDER BY created_at DESC";
         
         $stmt = $conn->prepare($query);
         $stmt->execute($params);
@@ -89,6 +89,14 @@ function getUserReports() {
             $report['status_text'] = getStatusText($report['status']);
             $report['category_text'] = getCategoryText($report['kategori']);
             $report['formatted_date'] = formatDate($report['created_at']);
+            // Encode foto_bukti to base64 if it exists for display in HTML
+            if (!empty($report['foto_bukti'])) {
+                $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
+            } else {
+                $report['foto_bukti_base64'] = null;
+            }
+            // Remove the raw BLOB data from the JSON response to avoid issues
+            unset($report['foto_bukti']);
         }
         
         jsonResponse(['reports' => $reports]);
@@ -214,8 +222,8 @@ function getReportDetail() {
         $conn = $database->getConnection();
         
         // Get report details - user can only view their own reports
-        // Select feedback_admin as well
-        $stmt = $conn->prepare("SELECT id, judul, kategori, lokasi, deskripsi, status, created_at, feedback_admin FROM reports WHERE id = :id AND user_id = :user_id"); // Filter by user_id
+        // Select feedback_admin and foto_bukti as well
+        $stmt = $conn->prepare("SELECT id, judul, kategori, lokasi, deskripsi, status, created_at, feedback_admin, foto_bukti FROM reports WHERE id = :id AND user_id = :user_id"); // Filter by user_id
         $stmt->execute([':id' => $reportId, ':user_id' => $userId]);
         $report = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -233,6 +241,14 @@ function getReportDetail() {
         $report['status_text'] = getStatusText($report['status']);
         $report['category_text'] = getCategoryText($report['kategori']);
         $report['formatted_date'] = formatDate($report['created_at']);
+        // Encode foto_bukti to base64 if it exists for display in HTML
+        if (!empty($report['foto_bukti'])) {
+            $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
+        } else {
+            $report['foto_bukti_base64'] = null;
+        }
+        // Remove the raw BLOB data from the JSON response to avoid issues
+        unset($report['foto_bukti']);
 
         foreach ($comments as &$comment) {
             $comment['formatted_date'] = formatDate($comment['created_at']);
@@ -270,7 +286,7 @@ function submitReport() {
         $conn = $database->getConnection();
         
         // Validate required fields
-        $required_fields = ['judul', 'kategori', 'lokasi', 'deskripsi']; // Removed nama, email, telepon
+        $required_fields = ['judul', 'kategori', 'lokasi', 'deskripsi'];
         foreach ($required_fields as $field) {
             if (empty($input[$field])) {
                 jsonResponse(['error' => "Field '$field' is required"], 400); // Updated error message
@@ -283,19 +299,25 @@ function submitReport() {
         $reporterEmail = $_SESSION['user_email'] ?? '';
         $reporterPhone = $_SESSION['user_phone'] ?? ''; // Assuming you store phone in session, or add it to users table
 
-        // --- START: Removed foto_bukti handling ---
-        // The file upload handling block for foto_bukti is removed here.
-        // --- END: Removed foto_bukti handling ---
+        // --- START: Added foto_bukti handling for BLOB ---
+        $fotoBuktiData = null;
+        if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
+            // Read the binary content of the uploaded file
+            $fotoBuktiData = file_get_contents($_FILES['foto_bukti']['tmp_name']);
+            if ($fotoBuktiData === false) {
+                jsonResponse(['error' => 'Gagal membaca konten foto bukti yang diunggah.'], 500);
+                return;
+            }
+        }
+        // --- END: Added foto_bukti handling ---
 
         // Generate report ID using the database function (if implemented) or PHP
         $reportId = generateId('RPT'); // Using generateId from config.php
 
-        // CORRECTED INSERT statement and execute array
-        // foto_bukti column is explicitly removed from the INSERT statement and values.
-        // 'status', 'created_at', 'updated_at' will use their DEFAULT values from database.sql
+        // CORRECTED INSERT statement to include foto_bukti
         $stmt = $conn->prepare("
-            INSERT INTO reports (id, user_id, nama, email, telepon, judul, kategori, lokasi, deskripsi)
-            VALUES (:id, :user_id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi)
+            INSERT INTO reports (id, user_id, nama, email, telepon, judul, kategori, lokasi, deskripsi, foto_bukti)
+            VALUES (:id, :user_id, :nama, :email, :telepon, :judul, :kategori, :lokasi, :deskripsi, :foto_bukti)
         ");
         
         $stmt->execute([
@@ -307,8 +329,8 @@ function submitReport() {
             ':judul' => sanitize($input['judul']),
             ':kategori' => sanitize($input['kategori']),
             ':lokasi' => sanitize($input['lokasi']),
-            ':deskripsi' => sanitize($input['deskripsi'])
-            // Removed ':foto_bukti' from here
+            ':deskripsi' => sanitize($input['deskripsi']),
+            ':foto_bukti' => $fotoBuktiData // Bind the BLOB data
         ]);
         
         jsonResponse([
@@ -322,142 +344,3 @@ function submitReport() {
     }
 }
 ?>
-```
-
-
-#### **3. `index.html` (Form and AJAX Call)**
-
-This is your main page with the report creation form. We need to ensure the form has `enctype="multipart/form-data"` and that the JavaScript is prepared to send the data (including file) via AJAX.
-
-
-```html
-<!DOCTYPE html>
-<html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laporan Aduan Masyarakat</title>
-    <link rel="stylesheet" href="shared/css/style.css" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <nav class="navbar">
-      <div class="nav-container">
-        <div class="nav-logo">
-          <h2>Aduan Masyarakat</h2>
-        </div>
-        <ul class="nav-menu">
-          <li class="nav-item">
-            <a href="index.html" class="nav-link active">Home</a>
-          </li>
-          <li class="nav-item">
-            <a href="about.html" class="nav-link">About</a>
-          </li>
-          <li class="nav-item">
-            <a href="login.html" class="nav-link">Login</a>
-          </li>
-          <li class="nav-item">
-            <a href="register.html" class="nav-link">Register</a>
-          </li>
-        </ul>
-        <div class="hamburger">
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-        </div>
-      </div>
-    </nav>
-
-    <main>
-      <section class="hero">
-        <div class="container">
-          <h1>Sistem Laporan Aduan Masyarakat</h1>
-          <p>
-            Laporkan keluhan dan saran Anda untuk pembangunan yang lebih baik
-          </p>
-          <a href="#laporan" class="btn btn-primary">Buat Laporan</a>
-        </div>
-      </section>
-
-      <section id="laporan" class="form-section">
-        <div class="container">
-          <h2>Form Laporan Aduan</h2>
-          <form id="reportForm" class="report-form" enctype="multipart/form-data">
-            <div class="form-group">
-              <label for="judul">Judul Aduan</label>
-              <input type="text" id="judul" name="judul" required />
-            </div>
-
-            <div class="form-group">
-              <label for="kategori">Kategori Aduan</label>
-              <select id="kategori" name="kategori" required>
-                <option value="">Pilih Kategori</option>
-                <option value="infrastruktur">Infrastruktur</option>
-                <option value="lingkungan">Lingkungan</option>
-                <option value="sosial">Sosial</option>
-                <option value="ekonomi">Ekonomi</option>
-                <option value="lainnya">Lainnya</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="lokasi">Lokasi Kejadian</label>
-              <input type="text" id="lokasi" name="lokasi" required />
-            </div>
-            
-            <div class="form-group">
-              <label for="deskripsi">Deskripsi Aduan</label>
-              <textarea
-                id="deskripsi"
-                name="deskripsi"
-                rows="5"
-                required
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="foto_bukti">Upload Foto Bukti (Opsional)</label>
-              <input type="file" id="foto_bukti" name="foto_bukti" accept="image/*" />
-            </div>
-
-            <button type="submit" class="btn btn-primary">Kirim Laporan</button>
-          </form>
-        </div>
-      </section>
-
-      <section class="features">
-        <div class="container">
-          <h2>Mengapa Menggunakan Sistem Ini?</h2>
-          <div class="features-grid">
-            <div class="feature-card">
-              <i class="fas fa-fast-forward"></i>
-              <h3>Cepat & Mudah</h3>
-              <p>Proses pelaporan yang simpel dan tidak ribet</p>
-            </div>
-            <div class="feature-card">
-              <i class="fas fa-shield-alt"></i>
-              <h3>Aman & Terpercaya</h3>
-              <p>Data Anda akan dijaga kerahasiaannya</p>
-            </div>
-            <div class="feature-card">
-              <i class="fas fa-clock"></i>
-              <h3>Respon Cepat</h3>
-              <p>Tim kami akan merespon laporan Anda dengan segera</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="container">
-        <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
-      </div>
-    </footer>
-
-    <script src="shared/js/script.js"></script>
-  </body>
-</html>

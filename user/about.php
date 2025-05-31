@@ -9,12 +9,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLM - Tentang Kami</title>
+    <title>SLM - Sistem Laporan Masyarakat</title>
+    <link rel="stylesheet" href="shared/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body data-logged-in="<?php echo $isLoggedIn ? 'true' : 'false'; ?>">
     <header>
-        </header>
-
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2>SLM</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="user-dashboard.html" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="about.php" class="nav-link">About</a></li>
+                    <?php if (!$isLoggedIn): ?>
+                        <li class="nav-item"><a href="login.html" class="nav-link">Login</a></li>
+                        <li class="nav-item"><a href="register.html" class="nav-link">Register</a></li>
+                    <?php else: ?>
+                        <li class="nav-item"><a href="<?php echo ($userRole === 'admin') ? 'admin/admin-dashboard.html' : 'user/user-dashboard.html'; ?>" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li class="nav-item"><a href="logout.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <?php endif; ?>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
     <main class="container">
         <h2>Tentang Sistem Laporan Masyarakat (SLM)</h2>
         <p>Sistem Informasi Laporan Masyarakat (SLM) adalah sebuah aplikasi web yang dibangun sebagai bagian dari Proyek Akhir Mata Kuliah Pemrograman Web.</p>

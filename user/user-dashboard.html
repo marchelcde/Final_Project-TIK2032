@@ -19,12 +19,20 @@
         </div>
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="index.php" class="nav-link">
+            <a
+              href="#"
+              class="nav-link"
+              onclick="showUserProfileModal(); return false;"
+            >
               <i class="fas fa-user"></i> User
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link" onclick="logout(); return false;">
+            <a
+              href="logout.php"
+              class="nav-link"
+              onclick="logout(); return false;"
+            >
               <i class="fas fa-sign-out-alt"></i> Logout
             </a>
           </li>
@@ -95,19 +103,41 @@
             </select>
           </div>
 
-          <div class="reports-grid" id="userReportsGrid">
-            <!-- Reports will be loaded here -->
-          </div>
+          <div class="reports-grid" id="userReportsGrid"></div>
         </div>
       </div>
     </main>
 
-    <!-- Modal untuk Detail Laporan User -->
     <div id="userReportModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Detail Laporan</h2>
         <div id="userReportDetails"></div>
+      </div>
+    </div>
+
+    <div id="userProfileModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" onclick="closeUserProfileModal()">&times;</span>
+        <h2>Profil Pengguna</h2>
+        <div class="user-profile-details">
+          <p>
+            <strong>Nama Lengkap:</strong> <span id="profileFullName"></span>
+          </p>
+          <p><strong>Username:</strong> <span id="profileUsername"></span></p>
+          <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+        </div>
+        <div class="modal-actions">
+          <button
+            class="btn btn-primary"
+            onclick="alert('Fungsi ubah kata sandi akan diimplementasikan.');"
+          >
+            <i class="fas fa-key"></i> Ubah Kata Sandi
+          </button>
+          <button class="btn btn-secondary" onclick="logout();">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
       </div>
     </div>
 

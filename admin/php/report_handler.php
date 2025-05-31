@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php'; // Ensure this path is correct for your setup (e.g., shared/php/config.php)
+require_once 'config.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -51,36 +51,28 @@ function createReport($db) {
             }
         }
         
-        // Handle file upload if present (needs to be from $_FILES if form enctype is multipart/form-data)
-        $fotoBuktiPath = null;
+        // Handle file upload if present
+        $fotoBuktiData = null;
         if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = UPLOAD_PATH; // UPLOAD_PATH defined in config.php
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $fileName = uniqid() . '_' . basename($_FILES['foto_bukti']['name']);
-            $targetFilePath = $uploadDir . $fileName;
-            if (move_uploaded_file($_FILES['foto_bukti']['tmp_name'], $targetFilePath)) {
-                $fotoBuktiPath = $targetFilePath;
-            } else {
-                jsonResponse(['error' => 'Failed to upload photo.'], 500);
+            // Read the binary content of the uploaded file
+            $fotoBuktiData = file_get_contents($_FILES['foto_bukti']['tmp_name']);
+            if ($fotoBuktiData === false) {
+                jsonResponse(['error' => 'Failed to read uploaded photo content.'], 500);
                 return;
             }
         }
 
         // Generate report ID (if your 'id' column is not AUTO_INCREMENT)
-        // If 'id' is AUTO_INCREMENT, remove this line and ':id' from query and bindParam.
         $reportId = generateId('RPT'); 
         
-        // Prepare SQL - Added user_id and foto_bukti columns
-        $query = "INSERT INTO reports (id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at) 
-                  VALUES (:id, :user_id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, :foto_bukti, 'pending', NOW())";
+        // Prepare SQL - Added foto_bukti column to INSERT statement
+        $query = "INSERT INTO reports (id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at) 
+                  VALUES (:id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, :foto_bukti, 'pending', NOW())";
         
         $stmt = $db->prepare($query);
         
         // Bind parameters
         $stmt->bindParam(':id', $reportId);
-        $stmt->bindValue(':user_id', null, PDO::PARAM_STR); // Explicitly set user_id to NULL for unauthenticated reports
         $stmt->bindParam(':nama', sanitize($input['nama']));
         $stmt->bindParam(':email', sanitize($input['email']));
         $stmt->bindParam(':telepon', sanitize($input['telepon']));
@@ -88,7 +80,7 @@ function createReport($db) {
         $stmt->bindParam(':judul', sanitize($input['judul']));
         $stmt->bindParam(':deskripsi', sanitize($input['deskripsi']));
         $stmt->bindParam(':lokasi', sanitize($input['lokasi']));
-        $stmt->bindParam(':foto_bukti', $fotoBuktiPath); // Bind the photo path
+        $stmt->bindParam(':foto_bukti', $fotoBuktiData, PDO::PARAM_LOB); // Bind BLOB data
         
         if ($stmt->execute()) {
             jsonResponse([
@@ -111,8 +103,8 @@ function getReports($db) {
         $category = $_GET['category'] ?? '';
         $limit = $_GET['limit'] ?? 50;
         
-        // Include user_id and feedback_admin in the select list
-        $query = "SELECT id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at, feedback_admin FROM reports WHERE 1=1";
+        // Include foto_bukti in the select list to retrieve it
+        $query = "SELECT id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at FROM reports WHERE 1=1";
         $params = [];
         
         if ($status) {
@@ -142,9 +134,10 @@ function getReports($db) {
             $report['status_text'] = getStatusText($report['status']);
             $report['category_text'] = getCategoryText($report['kategori']);
             $report['formatted_date'] = formatDate($report['created_at']);
-            // Add full path to foto_bukti if it exists
+            // If you want to display the image, you'll need to base64 encode it on the PHP side
+            // or create a separate endpoint to serve the image.
             if (!empty($report['foto_bukti'])) {
-                $report['foto_bukti_url'] = APP_URL . '/' . $report['foto_bukti'];
+                $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
             }
         }
         
@@ -166,8 +159,8 @@ function getReportDetail($db) {
             jsonResponse(['error' => 'Report ID is required'], 400);
         }
         
-        // Include user_id and feedback_admin in the select list
-        $query = "SELECT id, user_id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at, updated_at, feedback_admin FROM reports WHERE id = :id";
+        // Include foto_bukti in the select list to retrieve it
+        $query = "SELECT id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at FROM reports WHERE id = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -182,9 +175,10 @@ function getReportDetail($db) {
         $report['status_text'] = getStatusText($report['status']);
         $report['category_text'] = getCategoryText($report['kategori']);
         $report['formatted_date'] = formatDate($report['created_at']);
-        // Add full path to foto_bukti if it exists
+        // If you want to display the image, you'll need to base64 encode it on the PHP side
+        // or create a separate endpoint to serve the image.
         if (!empty($report['foto_bukti'])) {
-            $report['foto_bukti_url'] = APP_URL . '/' . $report['foto_bukti'];
+            $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
         }
         
         jsonResponse([

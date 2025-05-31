@@ -21,7 +21,7 @@
             <a href="index.html" class="nav-link active">Home</a>
           </li>
           <li class="nav-item">
-            <a href="about.html" class="nav-link">About</a>
+            <a href="about.php" class="nav-link">About</a>
           </li>
           <li class="nav-item">
             <a href="login.html" class="nav-link">Login</a>

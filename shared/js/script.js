@@ -47,11 +47,17 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeDemoData();
 }); // This closes the DOMContentLoaded listener
 
-// Smooth scrolling for anchor links
+// Smooth scrolling for anchor links (Modified to handle href="#")
 document.addEventListener("click", function (e) {
   if (e.target.matches('a[href^="#"]')) {
-    e.preventDefault();
-    const target = document.querySelector(e.target.getAttribute("href"));
+    e.preventDefault(); // Prevent default hash behavior
+    const href = e.target.getAttribute("href");
+    if (href === "#") {
+      // If href is just '#', do nothing or scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({
         behavior: "smooth",
@@ -59,7 +65,7 @@ document.addEventListener("click", function (e) {
       });
     }
   }
-}); // Correctly closes the click event listener. This is the last character for this listener.
+});
 
 // Handle Report Form Submission (AJAX to PHP handler)
 function handleReportSubmission(e) {
@@ -120,7 +126,6 @@ function handleLogin(e) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Set session data
         sessionStorage.setItem("userLoggedIn", "true");
         sessionStorage.setItem("userRole", data.user.role);
         sessionStorage.setItem("userEmail", data.user.email);
@@ -128,7 +133,6 @@ function handleLogin(e) {
         sessionStorage.setItem("userName", data.user.fullName); // Store user's full name
         sessionStorage.setItem("currentUser", JSON.stringify(data.user)); // Store full user object
 
-        // Show success message
         showNotification(
           `Welcome ${data.user.fullName || data.user.username}!`,
           "success"
@@ -145,7 +149,6 @@ function handleLogin(e) {
           }, 1000);
         }
       } else {
-        // Show error message
         showNotification(data.error || "Login failed", "error");
       }
     })
@@ -201,7 +204,6 @@ function handleRegister(e) {
         // Show success message and redirect to login
         showRegistrationSuccess(data.username);
       } else {
-        // Show error message
         showNotification(data.error || "Registration failed", "error");
       }
     })
@@ -523,8 +525,15 @@ function initializeDemoData() {
   }
 }
 
-// Initialize demo data on page load
-initializeDemoData();
+// THIS FUNCTION IS ADDED FOR THE DEMO DATA INITIALIZATION
+function getReports() {
+  try {
+    return JSON.parse(localStorage.getItem("reports") || "[]");
+  } catch (e) {
+    console.error("Error parsing reports from localStorage:", e);
+    return [];
+  }
+}
 
 // Add this function to your shared/js/script.js file
 function validateRegisterForm(userData) {

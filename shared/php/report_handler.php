@@ -37,34 +37,50 @@ switch ($method) {
 
 function createReport($db) {
     try {
-        $data = json_decode(file_get_contents('php://input'), true);
+        // Receive data either from JSON body (for AJAX with application/json) or $_POST (for standard form/multipart)
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            $input = $_POST; // Fallback for x-www-form-urlencoded or multipart/form-data
+        }
         
         // Validate required fields
         $required = ['nama', 'email', 'telepon', 'kategori', 'judul', 'deskripsi', 'lokasi'];
         foreach ($required as $field) {
-            if (empty($data[$field])) {
-                jsonResponse(['error' => "Field $field is required"], 400);
+            if (empty($input[$field])) { // Use $input instead of $data
+                jsonResponse(['error' => "Field '$field' is required"], 400); // Improved error message
             }
         }
         
-        // Generate report ID
-        $reportId = generateId('RPT');
+        // Handle file upload if present
+        $fotoBuktiData = null;
+        if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] === UPLOAD_ERR_OK) {
+            // Read the binary content of the uploaded file
+            $fotoBuktiData = file_get_contents($_FILES['foto_bukti']['tmp_name']);
+            if ($fotoBuktiData === false) {
+                jsonResponse(['error' => 'Failed to read uploaded photo content.'], 500);
+                return;
+            }
+        }
+
+        // Generate report ID (if your 'id' column is not AUTO_INCREMENT)
+        $reportId = generateId('RPT'); 
         
-        // Prepare SQL
-        $query = "INSERT INTO reports (id, nama, email, telepon, kategori, judul, deskripsi, lokasi, status, created_at) 
-                  VALUES (:id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, 'pending', NOW())";
+        // Prepare SQL - Added foto_bukti column to INSERT statement
+        $query = "INSERT INTO reports (id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at) 
+                  VALUES (:id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, :foto_bukti, 'pending', NOW())";
         
         $stmt = $db->prepare($query);
         
         // Bind parameters
         $stmt->bindParam(':id', $reportId);
-        $stmt->bindParam(':nama', sanitize($data['nama']));
-        $stmt->bindParam(':email', sanitize($data['email']));
-        $stmt->bindParam(':telepon', sanitize($data['telepon']));
-        $stmt->bindParam(':kategori', sanitize($data['kategori']));
-        $stmt->bindParam(':judul', sanitize($data['judul']));
-        $stmt->bindParam(':deskripsi', sanitize($data['deskripsi']));
-        $stmt->bindParam(':lokasi', sanitize($data['lokasi']));
+        $stmt->bindParam(':nama', sanitize($input['nama']));
+        $stmt->bindParam(':email', sanitize($input['email']));
+        $stmt->bindParam(':telepon', sanitize($input['telepon']));
+        $stmt->bindParam(':kategori', sanitize($input['kategori']));
+        $stmt->bindParam(':judul', sanitize($input['judul']));
+        $stmt->bindParam(':deskripsi', sanitize($input['deskripsi']));
+        $stmt->bindParam(':lokasi', sanitize($input['lokasi']));
+        $stmt->bindParam(':foto_bukti', $fotoBuktiData, PDO::PARAM_LOB); // Bind BLOB data
         
         if ($stmt->execute()) {
             jsonResponse([
@@ -73,7 +89,7 @@ function createReport($db) {
                 'report_id' => $reportId
             ]);
         } else {
-            jsonResponse(['error' => 'Gagal menyimpan laporan'], 500);
+            jsonResponse(['error' => 'Failed to save report'], 500);
         }
         
     } catch (Exception $e) {
@@ -87,7 +103,8 @@ function getReports($db) {
         $category = $_GET['category'] ?? '';
         $limit = $_GET['limit'] ?? 50;
         
-        $query = "SELECT * FROM reports WHERE 1=1";
+        // Include foto_bukti in the select list to retrieve it
+        $query = "SELECT id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at FROM reports WHERE 1=1";
         $params = [];
         
         if ($status) {
@@ -117,6 +134,11 @@ function getReports($db) {
             $report['status_text'] = getStatusText($report['status']);
             $report['category_text'] = getCategoryText($report['kategori']);
             $report['formatted_date'] = formatDate($report['created_at']);
+            // If you want to display the image, you'll need to base64 encode it on the PHP side
+            // or create a separate endpoint to serve the image.
+            if (!empty($report['foto_bukti'])) {
+                $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
+            }
         }
         
         jsonResponse([
@@ -137,7 +159,8 @@ function getReportDetail($db) {
             jsonResponse(['error' => 'Report ID is required'], 400);
         }
         
-        $query = "SELECT * FROM reports WHERE id = :id";
+        // Include foto_bukti in the select list to retrieve it
+        $query = "SELECT id, nama, email, telepon, kategori, judul, deskripsi, lokasi, foto_bukti, status, created_at FROM reports WHERE id = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -152,6 +175,11 @@ function getReportDetail($db) {
         $report['status_text'] = getStatusText($report['status']);
         $report['category_text'] = getCategoryText($report['kategori']);
         $report['formatted_date'] = formatDate($report['created_at']);
+        // If you want to display the image, you'll need to base64 encode it on the PHP side
+        // or create a separate endpoint to serve the image.
+        if (!empty($report['foto_bukti'])) {
+            $report['foto_bukti_base64'] = base64_encode($report['foto_bukti']);
+        }
         
         jsonResponse([
             'success' => true,
