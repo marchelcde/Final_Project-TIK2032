@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Laporan Aduan Masyarakat</title>
+    <link rel="stylesheet" href="../shared/css/style.css" />
+    <link rel="stylesheet" href="css/admin-style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="navbar admin-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <h2>Admin Dashboard</h2>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="#" class="nav-link" id="adminProfileLink">
+              <i class="fas fa-user"></i> Admin
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="logout(); return false;">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <ul class="sidebar-menu">
+          <li>
+            <a
+              href="#dashboard"
+              class="sidebar-link active"
+              onclick="showSection('dashboard')"
+            >
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li>
+            <a
+              href="#reports"
+              class="sidebar-link"
+              onclick="showSection('reports')"
+            >
+              <i class="fas fa-file-alt"></i> Kelola Laporan
+            </a>
+          </li>
+          <li>
+            <a
+              href="#statistics"
+              class="sidebar-link"
+              onclick="showSection('statistics')"
+            >
+              <i class="fas fa-chart-bar"></i> Statistik
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <main class="admin-content">
+        <section id="dashboard" class="content-section active">
+          <h1>Dashboard Overview</h1>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <i class="fas fa-file-alt"></i>
+              <div>
+                <h3 id="totalReports">0</h3>
+                <p>Total Laporan</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <i class="fas fa-clock"></i>
+              <div>
+                <h3 id="pendingReports">0</h3>
+                <p>Menunggu</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <i class="fas fa-check-circle"></i>
+              <div>
+                <h3 id="completedReports">0</h3>
+                <p>Selesai</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <i class="fas fa-times-circle"></i>
+              <div>
+                <h3 id="rejectedReports">0</h3>
+                <p>Ditolak</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="recent-reports">
+            <h2>Laporan Terbaru</h2>
+            <div class="table-container">
+              <table id="recentReportsTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Judul</th>
+                    <th>Kategori</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="reports" class="content-section">
+          <h1>Kelola Laporan</h1>
+
+          <div class="filters">
+            <select id="statusFilter">
+              <option value="">Semua Status</option>
+              <option value="pending">Menunggu</option>
+              <option value="in_progress">Diproses</option>
+              <option value="completed">Selesai</option>
+              <option value="rejected">Ditolak</option>
+            </select>
+
+            <select id="categoryFilter">
+              <option value="">Semua Kategori</option>
+              <option value="infrastruktur">Infrastruktur</option>
+              <option value="lingkungan">Lingkungan</option>
+              <option value="sosial">Sosial</option>
+              <option value="ekonomi">Ekonomi</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <div class="table-container">
+            <table id="reportsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama</th>
+                  <th>Judul</th>
+                  <th>Kategori</th>
+                  <th>Status</th>
+                  <th>Tanggal</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="statistics" class="content-section">
+          <h1>Statistik Laporan</h1>
+
+          <div class="chart-container">
+            <div class="chart-card">
+              <h3>Laporan per Kategori</h3>
+              <canvas id="categoryChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h3>Status Laporan</h3>
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="reportModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Detail Laporan</h2>
+        <div id="reportDetails"></div>
+
+        <div class="modal-actions">
+          <select id="statusUpdate">
+            <option value="pending">Menunggu</option>
+            <option value="in_progress">Diproses</option>
+            <option value="completed">Selesai</option>
+            <option value="rejected">Ditolak</option>
+          </select>
+          <button onclick="updateReportStatus()" class="btn btn-primary">
+            Update Status
+          </button>
+        </div>
+
+        <div class="admin-feedback-section" style="margin-top: 1.5rem">
+          <h3>Feedback Admin</h3>
+          <textarea
+            id="adminFeedbackText"
+            rows="4"
+            placeholder="Tambahkan feedback atau catatan..."
+          ></textarea>
+          <button
+            onclick="addAdminFeedback()"
+            class="btn btn-success"
+            style="margin-top: 10px"
+          >
+            <i class="fas fa-comment"></i> Tambah / Update Feedback
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="userProfileModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <div class="user-profile-details">
+        <p><strong>Nama Lengkap:</strong> <span id="profileFullName"></span></p>
+        <p><strong>Username:</strong> <span id="profileUsername"></span></p>
+        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Ubah Kata Sandi</h3>
+    <div class="form-group">
+        <label for="oldPassword">Kata Sandi Lama</label>
+        <input type="password" id="oldPassword" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="newPassword">Kata Sandi Baru</label>
+        <input type="password" id="newPassword" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="confirmNewPassword">Konfirmasi Kata Sandi Baru</label>
+        <input type="password" id="confirmNewPassword" class="form-control" />
+    </div>
+
+    <div class="modal-actions">
+      <button
+        class="btn btn-primary"
+        onclick="handleChangePasswordFrontend();" // CALL NEW JS FUNCTION
+      >
+        <i class="fas fa-key"></i> Ubah Kata Sandi
+      </button>
+      <button class="btn btn-secondary" onclick="logout();">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../shared/js/script.js"></script>
+    <script src="js/admin.js"></script>
+  </body>
+</html>

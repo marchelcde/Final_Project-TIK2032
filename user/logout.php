@@ -14,6 +14,6 @@ $_SESSION = array();
 session_destroy();
 
 // Redirect to the main index.php after logout (now at root)
-header("location: ../index.php");
+header("location: ../index.html");
 exit;
 ?>

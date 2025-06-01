@@ -1,77 +1,140 @@
-<?php
-// user/index.php
-// Location: FINAL_PROJECT-TIK2032/user/index.php
-
-// Include header.php which handles session_start() and sets $isLoggedIn, $userName
-include '../includes/header.php'; // Path from user/ to includes/
-
-// $isLoggedIn and $userName are now available from header.php.
-// No need for a separate session_start() or $isLoggedIn check here.
-
-?>
 <!DOCTYPE html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLM - Sistem Laporan Masyarakat</title>
-    <link rel="stylesheet" href="../css/style.css"> 
-</head>
-<body data-logged-in="<?php echo $isLoggedIn ? 'true' : 'false'; ?>">
-    <main class="container">
-        <?php if ($isLoggedIn): // Display user info only if logged in ?>
-        <section class="user-info-section">
-            <h3>Informasi Pengguna Saat Ini</h3>
-            <p><strong>ID Pengguna:</strong> <?php echo htmlspecialchars($_SESSION['id'] ?? 'N/A'); ?></p>
-            <p><strong>Nama:</strong> <?php echo htmlspecialchars($_SESSION['name'] ?? 'N/A'); ?></p>
-            <p><strong>Username:</strong> <?php echo htmlspecialchars($_SESSION['username'] ?? 'N/A'); ?></p>
-            <p><strong>Email:</strong> <?php echo htmlspecialchars($_SESSION['email'] ?? 'N/A'); ?></p>
-            <p><a href="../logout.php">Logout</a></p>
-        </section>
-        <?php else: // Display a message if not logged in ?>
-        <section class="not-logged-in-message">
-            <h3>Anda Belum Login</h3>
-            <p>Silakan <a href="login.php">Masuk</a> atau <a href="register.php">Daftar</a> untuk membuat laporan dan melihat informasi akun Anda.</p>
-        </section>
-        <?php endif; ?>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laporan Aduan Masyarakat</title>
+    <link rel="stylesheet" href="shared/css/style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <h2>Aduan Masyarakat</h2>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link active">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="about.php" class="nav-link">About</a>
+          </li>
+          <li class="nav-item">
+            <a href="login.html" class="nav-link">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="register.html" class="nav-link">Register</a>
+          </li>
+        </ul>
+        <div class="hamburger">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
+      </div>
+    </nav>
 
-        <section class="hero">
-            <h2>Selamat Datang di Sistem Laporan Masyarakat</h2>
-            <p>Laporkan masalah atau berikan aspirasi Anda untuk komunitas yang lebih baik. Kami siap mendengarkan dan menindaklanjuti.</p>
-            <a href="laporan.php" class="button require-login">Buat Laporan Sekarang!</a>
-        </section>
+    <main>
+      <section class="hero">
+        <div class="container">
+          <h1>Sistem Laporan Aduan Masyarakat</h1>
+          <p>
+            Laporkan keluhan dan saran Anda untuk pembangunan yang lebih baik
+          </p>
+          <a href="user/laporan.php" class="btn btn-primary">Buat Laporan</a>
+        </div>
+      </section>
 
-        <section class="features">
-            <h3>Mengapa Menggunakan SLM?</h3>
-            <article>
-                <h4>Mudah & Cepat</h4>
-                <p>Sampaikan laporan Anda hanya dalam beberapa langkah sederhana.</p>
-            </article>
-            <article>
-                <h4>Transparan</h4>
-                <p>Lacak status laporan Anda secara online kapan saja.</p>
-            </article>
-            <article>
-                <h4>Responsif</h4>
-                <p>Laporan Anda akan diterima dan ditangani oleh pihak berwenang.</p>
-            </article>
-        </section>
+      <section id="laporan" class="form-section">
+        <div class="container">
+          <h2>Form Laporan Aduan</h2>
+          <form id="reportForm" class="report-form">
+            <div class="form-group">
+              <label for="nama">Nama Lengkap</label>
+              <input type="text" id="nama" name="nama" required />
+            </div>
 
-        <section class="stats">
-            <h3>Statistik Laporan</h3>
-            <p>Total Laporan Masuk: <strong>150</strong></p>
-            <p>Laporan Diproses: <strong>75</strong></p>
-            <p>Laporan Selesai: <strong>60</strong></p>
-        </section>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="telepon">No. Telepon</label>
+              <input type="tel" id="telepon" name="telepon" required />
+            </div>
+
+            <div class="form-group">
+              <label for="kategori">Kategori Aduan</label>
+              <select id="kategori" name="kategori" required>
+                <option value="">Pilih Kategori</option>
+                <option value="infrastruktur">Infrastruktur</option>
+                <option value="lingkungan">Lingkungan</option>
+                <option value="sosial">Sosial</option>
+                <option value="ekonomi">Ekonomi</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="judul">Judul Aduan</label>
+              <input type="text" id="judul" name="judul" required />
+            </div>
+
+            <div class="form-group">
+              <label for="deskripsi">Deskripsi Aduan</label>
+              <textarea
+                id="deskripsi"
+                name="deskripsi"
+                rows="5"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="lokasi">Lokasi Kejadian</label>
+              <input type="text" id="lokasi" name="lokasi" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Kirim Laporan</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="container">
+          <h2>Mengapa Menggunakan Sistem Ini?</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <i class="fas fa-fast-forward"></i>
+              <h3>Cepat & Mudah</h3>
+              <p>Proses pelaporan yang simpel dan tidak ribet</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-shield-alt"></i>
+              <h3>Aman & Terpercaya</h3>
+              <p>Data Anda akan dijaga kerahasiaannya</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-clock"></i>
+              <h3>Respon Cepat</h3>
+              <p>Tim kami akan merespon laporan Anda dengan segera</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
-    <div id="popup-overlay"></div> 
-    <div id="popup-container">
-    </div>
-    <script src="../js/script.js"></script> 
 
-<?php
-// Include footer.php
-include '../includes/footer.php'; // Path from user/ to includes/
-?>
-</body>
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="shared/js/script.js"></script>
+  </body>
 </html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard User - Laporan Aduan Masyarakat</title>
+    <link rel="stylesheet" href="../shared/css/style.css" />
+    <link rel="stylesheet" href="css/user-style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <h2>Dashboard User</h2>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a
+              href="#"
+              class="nav-link"
+              onclick="showUserProfileModal(); return false;"
+            >
+              <i class="fas fa-user"></i> User
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              href="logout.php"
+              class="nav-link"
+              onclick="logout(); return false;"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <main class="user-dashboard">
+      <div class="container">
+        <div class="dashboard-header">
+          <h1>Dashboard Laporan Saya</h1>
+          <p>Kelola dan pantau status laporan yang telah Anda kirim</p>
+        </div>
+
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <i class="fas fa-file-alt"></i>
+            <div>
+              <h3 id="userTotalReports">0</h3>
+              <p>Total Laporan</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-clock"></i>
+            <div>
+              <h3 id="userPendingReports">0</h3>
+              <p>Menunggu</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-cog"></i>
+            <div>
+              <h3 id="userInProgressReports">0</h3>
+              <p>Diproses</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-check-circle"></i>
+            <div>
+              <h3 id="userCompletedReports">0</h3>
+              <p>Selesai</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-times-circle"></i>
+            <div>
+              <h3 id="userRejectedReports">0</h3>
+              <p>Ditolak</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-actions">
+          <a href="laporan.php" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Buat Laporan Baru
+          </a>
+        </div>
+
+        <div class="user-reports-section">
+          <h2>Daftar Laporan Saya</h2>
+
+          <div class="search-filter">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Cari laporan..."
+              class="search-input"
+            />
+            <select id="statusFilterUser" class="filter-select">
+              <option value="">Semua Status</option>
+              <option value="pending">Menunggu</option>
+              <option value="in_progress">Diproses</option>
+              <option value="completed">Selesai</option>
+              <option value="rejected">Ditolak</option>
+            </select>
+          </div>
+
+          <div class="reports-grid" id="userReportsGrid"></div>
+        </div>
+      </div>
+    </main>
+
+    <div id="userReportModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Detail Laporan</h2>
+        <div id="userReportDetails"></div>
+      </div>
+    </div>
+
+    <div id="userProfileModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="user-profile-details">
+          <p>
+            <strong>Nama Lengkap:</strong> <span id="profileFullName"></span>
+          </p>
+          <p><strong>Username:</strong> <span id="profileUsername"></span></p>
+          <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+        </div>
+
+        <h3 style="margin-top: 1.5rem">Ubah Kata Sandi</h3>
+        <div class="form-group">
+          <label for="oldPassword">Kata Sandi Lama</label>
+          <input type="password" id="oldPassword" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="newPassword">Kata Sandi Baru</label>
+          <input type="password" id="newPassword" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="confirmNewPassword">Konfirmasi Kata Sandi Baru</label>
+          <input type="password" id="confirmNewPassword" class="form-control" />
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="btn btn-primary"
+            onclick="handleChangePasswordFrontend();"
+          >
+            <i class="fas fa-key"></i> Ubah Kata Sandi
+          </button>
+          <button class="btn btn-secondary" onclick="logout();">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="../shared/js/script.js"></script>
+    <script src="js/user-dashboard.js"></script>
+  </body>
+</html>
