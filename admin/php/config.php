@@ -3,7 +3,7 @@
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'aduan_masyarakat');
 define('DB_USER', 'root');
-define('DB_PASS', 'user123');
+define('DB_PASS', 'kenola20');
 
 // Application Settings
 define('APP_NAME', 'Sistem Laporan Aduan Masyarakat');
@@ -29,7 +29,8 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->exec("set names utf8");
         } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
+            // CHANGE THIS LINE: Instead of echoing, throw an exception
+            throw new Exception("Database connection error: " . $exception->getMessage(), 0, $exception);
         }
         return $this->conn;
     }

@@ -1,6 +1,8 @@
 <?php
-// Login Handler for Database Users
-require_once 'config.php';
+// shared/php/login_handler.php
+// Location: FINAL_PROJECT-TIK2032/shared/php/login_handler.php
+
+require_once 'config.php'; // Includes session_start() and Database class, etc.
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -19,103 +21,100 @@ if ($method === 'POST') {
 
 function loginUser() {
     try {
-        // Get input data
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!$input) {
-            // Try to get from POST data
-            $input = $_POST;
+            $input = $_POST; // Fallback for x-www-form-urlencoded
         }
         
-        // Validate required fields
         if (empty($input['username']) || empty($input['password'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Username and password are required']);
-            return;
+            jsonResponse(['error' => 'Username and password are required'], 400);
         }
         
-        $username = sanitize($input['username']);
-        $password = $input['password'];
+        $username_input = sanitize($input['username']);
+        $password_input = $input['password'];
         
-        // Check default admin credentials first
-        if ($username === 'admin' && $password === 'admin123') {
-            // Set session for admin
-            $_SESSION['user_logged_in'] = true;
-            $_SESSION['user_role'] = 'admin';
-            $_SESSION['user_id'] = 'admin';
-            $_SESSION['user_email'] = 'admin@gmail.com';
-            $_SESSION['user_fullname'] = 'Administrator';
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => [
-                    'username' => 'admin',
-                    'fullName' => 'Administrator',
-                    'role' => 'admin',
-                    'email' => 'admin@gmail.com'
-                ]
-            ]);
-            return;
-        }
-        
-        // Check default user credentials
-        if ($username === 'user' && $password === 'user123') {
-            // Set session for default user
-            $_SESSION['user_logged_in'] = true;
-            $_SESSION['user_role'] = 'user';
-            $_SESSION['user_id'] = 'user';
-            $_SESSION['user_email'] = 'user@gmail.com';
-            $_SESSION['user_fullname'] = 'Demo User';
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => [
-                    'username' => 'user',
-                    'fullName' => 'Demo User',
-                    'role' => 'user',
-                    'email' => 'user@gmail.com'
-                ]
-            ]);
-            return;
-        }
-        
-        // Check database for registered users
         $database = new Database();
         $conn = $database->getConnection();
         
-        // Look for user by username or email
-        $stmt = $conn->prepare("SELECT * FROM users WHERE (username = :username OR email = :username) AND status = 'active'");
-        $stmt->execute([':username' => $username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // --- Attempt to login as a REGULAR USER first (users table) ---
+        // Retrieve id, username, fullName, email, password, role from users table
+        $stmt_user = $conn->prepare("SELECT id, username, password, fullName, email, role FROM users WHERE (username = :username OR email = :username) AND status = 'active'");
+        $stmt_user->execute([':username' => $username_input]);
+        $user = $stmt_user->fetch(PDO::FETCH_ASSOC);
         
-        if ($user && password_verify($password, $user['password'])) {
-            // Set session for registered user
-            $_SESSION['user_logged_in'] = true;
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['user_id'] = $user['username'];
-            $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_fullname'] = $user['fullName'];
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => [
-                    'username' => $user['username'],
-                    'fullName' => $user['fullName'],
-                    'role' => $user['role'],
-                    'email' => $user['email']
-                ]
-            ]);
-        } else {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid username or password']);
+        if ($user) {
+            // Verify password (users table uses hashed passwords)
+            if (password_verify($password_input, $user['password'])) {
+                session_regenerate_id();
+                $_SESSION['user_logged_in'] = true;
+                $_SESSION['user_role'] = $user['role']; // 'user'
+                $_SESSION['user_id'] = $user['id']; // Store actual user ID from DB
+                $_SESSION['user_username'] = $user['username'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_fullname'] = $user['fullName'];
+                
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'fullName' => $user['fullName'],
+                        'role' => $user['role'],
+                        'email' => $user['email']
+                    ]
+                ]);
+                return;
+            }
         }
         
+        // --- If not found/authenticated as regular user, attempt to login as ADMIN (users table with 'admin' role) ---
+        // Note: Your DB structure has 'admin' as a role in the 'users' table, not a separate 'pengguna_admin'.
+        // So, we'll check the 'users' table again, specifically for the 'admin' role.
+        
+        // If the above query found a user but password didn't match, or user not found, continue to check admin.
+        // It's more efficient to check for the admin role directly in the 'users' table if admins are just users with a specific role.
+        // If 'pengguna_admin' is a separate table, then this section should query 'pengguna_admin'.
+        // Based on database.sql, 'admin' is a role in the 'users' table.
+        
+        // Re-query for admin role specifically if not authenticated as regular user
+        $stmt_admin = $conn->prepare("SELECT id, username, password, fullName, email, role FROM users WHERE (username = :username OR email = :username) AND role = 'admin' AND status = 'active'");
+        $stmt_admin->execute([':username' => $username_input]);
+        $admin = $stmt_admin->fetch(PDO::FETCH_ASSOC);
+
+        if ($admin) {
+            // Admin password verification (using hashed password from users table for admin role)
+            // If you want plain-text for admin, change password_verify to direct comparison (INSECURE)
+            if (password_verify($password_input, $admin['password'])) { 
+                session_regenerate_id();
+                $_SESSION['user_logged_in'] = true;
+                $_SESSION['user_role'] = 'admin'; // 'admin'
+                $_SESSION['user_id'] = $admin['id']; // Store actual admin ID from DB
+                $_SESSION['user_username'] = $admin['username'];
+                $_SESSION['user_email'] = $admin['email'];
+                $_SESSION['user_fullname'] = $admin['fullName'];
+                
+                jsonResponse([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => [
+                        'id' => $admin['id'],
+                        'username' => $admin['username'],
+                        'fullName' => $admin['fullName'],
+                        'role' => $admin['role'],
+                        'email' => $admin['email']
+                    ]
+                ]);
+                return;
+            }
+        }
+        
+        // If neither user nor admin authenticated
+        jsonResponse(['error' => 'Invalid username or password'], 401);
+        
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Login failed: ' . $e->getMessage()]);
+        jsonResponse(['error' => 'Login failed: ' . $e->getMessage()], 500);
     }
 }
 ?>

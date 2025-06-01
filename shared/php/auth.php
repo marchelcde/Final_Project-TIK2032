@@ -1,9 +1,11 @@
 <?php
-require_once 'config.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once 'config.php'; // Ensure this path is correct relative to auth.php
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: GET, POST'); // Allow POST for login/logout/register/change_password
 header('Access-Control-Allow-Headers: Content-Type');
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -17,7 +19,7 @@ switch ($method) {
             handleLogout();
         } elseif ($action === 'register') {
             handleRegister();
-        }
+        } elseif ($action === 'change_password') 
         break;
     
     case 'GET':
@@ -29,6 +31,8 @@ switch ($method) {
     default:
         jsonResponse(['error' => 'Method not allowed'], 405);
 }
+
+
 
 function handleLogin() {
     try {

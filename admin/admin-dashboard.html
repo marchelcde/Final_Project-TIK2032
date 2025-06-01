@@ -19,7 +19,9 @@
         </div>
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="#" class="nav-link"> <i class="fas fa-user"></i> Admin </a>
+            <a href="#" class="nav-link" id="adminProfileLink">
+              <i class="fas fa-user"></i> Admin
+            </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link" onclick="logout(); return false;">
@@ -64,7 +66,6 @@
       </aside>
 
       <main class="admin-content">
-        <!-- Dashboard Section -->
         <section id="dashboard" class="content-section active">
           <h1>Dashboard Overview</h1>
 
@@ -112,15 +113,12 @@
                     <th>Tanggal</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <!-- Data akan dimuat via JavaScript -->
-                </tbody>
+                <tbody></tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- Reports Management Section -->
         <section id="reports" class="content-section">
           <h1>Kelola Laporan</h1>
 
@@ -156,14 +154,11 @@
                   <th>Aksi</th>
                 </tr>
               </thead>
-              <tbody>
-                <!-- Data akan dimuat via JavaScript -->
-              </tbody>
+              <tbody></tbody>
             </table>
           </div>
         </section>
 
-        <!-- Statistics Section -->
         <section id="statistics" class="content-section">
           <h1>Statistik Laporan</h1>
 
@@ -182,7 +177,6 @@
       </main>
     </div>
 
-    <!-- Modal untuk Detail Laporan -->
     <div id="reportModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -200,8 +194,61 @@
             Update Status
           </button>
         </div>
+
+        <div class="admin-feedback-section" style="margin-top: 1.5rem">
+          <h3>Feedback Admin</h3>
+          <textarea
+            id="adminFeedbackText"
+            rows="4"
+            placeholder="Tambahkan feedback atau catatan..."
+          ></textarea>
+          <button
+            onclick="addAdminFeedback()"
+            class="btn btn-success"
+            style="margin-top: 10px"
+          >
+            <i class="fas fa-comment"></i> Tambah / Update Feedback
+          </button>
+        </div>
       </div>
     </div>
+
+    <div id="userProfileModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <div class="user-profile-details">
+        <p><strong>Nama Lengkap:</strong> <span id="profileFullName"></span></p>
+        <p><strong>Username:</strong> <span id="profileUsername"></span></p>
+        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Ubah Kata Sandi</h3>
+    <div class="form-group">
+        <label for="oldPassword">Kata Sandi Lama</label>
+        <input type="password" id="oldPassword" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="newPassword">Kata Sandi Baru</label>
+        <input type="password" id="newPassword" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="confirmNewPassword">Konfirmasi Kata Sandi Baru</label>
+        <input type="password" id="confirmNewPassword" class="form-control" />
+    </div>
+
+    <div class="modal-actions">
+      <button
+        class="btn btn-primary"
+        onclick="handleChangePasswordFrontend();" // CALL NEW JS FUNCTION
+      >
+        <i class="fas fa-key"></i> Ubah Kata Sandi
+      </button>
+      <button class="btn btn-secondary" onclick="logout();">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../shared/js/script.js"></script>
     <script src="js/admin.js"></script>
