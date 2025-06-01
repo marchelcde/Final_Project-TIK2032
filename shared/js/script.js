@@ -616,6 +616,26 @@ function validateRegisterForm(userData) {
   return isValid;
 }
 
+// Logout function - CENTRALIZED
+function logout() {
+  // Clear all session storage items related to user login
+  sessionStorage.removeItem("userLoggedIn");
+  sessionStorage.removeItem("userRole");
+  sessionStorage.removeItem("currentUser");
+  sessionStorage.removeItem("userEmail");
+  sessionStorage.removeItem("userId");
+  sessionStorage.removeItem("userName");
+  sessionStorage.clear(); // Clear all session data to be safe, if you want to ensure no other session data persists.
+
+  // Show logout message (optional, as redirect happens quickly)
+  if (typeof showNotification === "function") {
+    showNotification("Anda telah logout berhasil.", "info"); // Changed type to info as it's a notification of action.
+  }
+
+  // Redirect to the main index.html page (adjust path if your index.html is elsewhere)
+  window.location.href = "../index.html"; // Assuming the root index.html is one level up from shared/js/
+}
+
 // Add this function to admin.js (and user-dashboard.js)
 function handleChangePasswordFrontend() {
   const oldPassword = document.getElementById("oldPassword").value;
@@ -643,19 +663,31 @@ function handleChangePasswordFrontend() {
 
   showNotification("Mengubah kata sandi...", "info");
 
-  fetch("../shared/php/auth.php", {
-    // Path to the shared auth handler
+  // **** CRITICAL CHANGE: UPDATE THE FETCH URL HERE ****
+  fetch("../shared/php/update_password.php", {
+    // Ensure this path is correct
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      action: "change_password",
+      action: "change_password", // You can keep this action, or remove it in update_password.php as it's dedicated
       old_password: oldPassword,
       new_password: newPassword,
     }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      // Check if the response is OK (status 200-299) and then parse as JSON
+      if (!response.ok) {
+        // If response is not OK, try to read error as text first
+        return response.text().then((text) => {
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${text}`
+          );
+        });
+      }
+      return response.json();
+    })
     .then((data) => {
       if (data.success) {
         showNotification(data.message, "success");
@@ -663,17 +695,32 @@ function handleChangePasswordFrontend() {
         document.getElementById("oldPassword").value = "";
         document.getElementById("newPassword").value = "";
         document.getElementById("confirmNewPassword").value = "";
-        // Optionally close modal or reload profile details
-        closeUserProfileModal();
+
+        // Optionally close modal
+        // closeUserProfileModal() is defined in user-dashboard.js and admin.js,
+        // so it's okay to call it here.
+        if (typeof closeUserProfileModal === "function") {
+          closeUserProfileModal();
+        }
+
+        // **** ADD THIS BLOCK TO LOG OUT AFTER SUCCESS ****
+        // Use a short delay to allow the user to see the success notification
+        setTimeout(() => {
+          logout(); // This will now call the centralized logout function
+        }, 1500); // 1.5 second delay
       } else {
         showNotification(data.error || "Gagal mengubah kata sandi.", "error");
       }
     })
     .catch((error) => {
       console.error("Change password error:", error);
-      showNotification(
-        "Terjadi kesalahan jaringan saat mengubah kata sandi.",
-        "error"
-      );
+      // Show more detailed error message if possible
+      let errorMessage = "Terjadi kesalahan jaringan saat mengubah kata sandi.";
+      if (error.message && error.message.includes("HTTP error!")) {
+        errorMessage = "Error dari server: " + error.message;
+      } else if (error.message && error.message.includes("Unexpected token")) {
+        errorMessage = "Respons server tidak valid. Mungkin bukan JSON.";
+      }
+      showNotification(errorMessage, "error");
     });
 }

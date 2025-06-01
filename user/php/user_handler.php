@@ -107,14 +107,14 @@ function getUserReports() {
 }
 
 function getUserStats() {
-    checkUserAccess(); // Ensure user is logged in
+    checkUserAccess();
     
     try {
         $userId = $_SESSION['user_id'] ?? '';
         
         if (empty($userId)) {
             http_response_code(400);
-            jsonResponse(['error' => 'ID Pengguna tidak ditemukan di sesi']); // Updated error message
+            jsonResponse(['error' => 'ID Pengguna tidak ditemukan di sesi']);
             exit;
         }
         
@@ -140,16 +140,22 @@ function getUserStats() {
         $stmt = $conn->prepare("SELECT COUNT(*) as completed FROM reports WHERE user_id = :user_id AND status = 'completed'");
         $stmt->execute([':user_id' => $userId]);
         $completed = $stmt->fetch(PDO::FETCH_ASSOC)['completed'];
+
+        // ADD THIS QUERY FOR REJECTED REPORTS
+        $stmt = $conn->prepare("SELECT COUNT(*) as rejected FROM reports WHERE user_id = :user_id AND status = 'rejected'");
+        $stmt->execute([':user_id' => $userId]);
+        $rejected = $stmt->fetch(PDO::FETCH_ASSOC)['rejected'];
         
         jsonResponse([
             'total' => $total,
             'pending' => $pending,
             'in_progress' => $inProgress,
-            'completed' => $completed
+            'completed' => $completed,
+            'rejected' => $rejected // ADD THIS TO THE RESPONSE
         ]);
     } catch (Exception $e) {
         http_response_code(500);
-        jsonResponse(['error' => 'Gagal mengambil statistik pengguna: ' . $e->getMessage()]); // Updated error message
+        jsonResponse(['error' => 'Gagal mengambil statistik pengguna: ' . $e->getMessage()]);
     }
 }
 

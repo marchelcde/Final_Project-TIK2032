@@ -62,11 +62,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Function to load user dashboard statistics
 function loadUserDashboardData() {
-  fetch("php/user_handler.php?action=get_user_stats") // Corrected URL to user_handler.php
+  fetch("php/user_handler.php?action=get_user_stats")
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
         console.error("Error fetching user stats:", data.error);
+        // Optionally set error messages for all stat cards
+        document.getElementById("userTotalReports").textContent = "Error";
+        document.getElementById("userPendingReports").textContent = "Error";
+        document.getElementById("userInProgressReports").textContent = "Error";
+        document.getElementById("userCompletedReports").textContent = "Error";
+        document.getElementById("userRejectedReports").textContent = "Error"; // Add this
         return;
       }
 
@@ -78,12 +84,20 @@ function loadUserDashboardData() {
         data.in_progress || 0;
       document.getElementById("userCompletedReports").textContent =
         data.completed || 0;
+      // ADD THIS LINE TO UPDATE THE REJECTED REPORTS COUNT
+      document.getElementById("userRejectedReports").textContent =
+        data.rejected || 0;
     })
     .catch((error) => {
       console.error("Error loading user dashboard data:", error);
+      // Ensure error messages are displayed if fetch fails
+      document.getElementById("userTotalReports").textContent = "Error";
+      document.getElementById("userPendingReports").textContent = "Error";
+      document.getElementById("userInProgressReports").textContent = "Error";
+      document.getElementById("userCompletedReports").textContent = "Error";
+      document.getElementById("userRejectedReports").textContent = "Error"; // Add this
     });
 }
-
 // NEW: Function to load user's reports
 function loadUserReports() {
   const searchInput = document.getElementById("searchInput");
@@ -196,8 +210,6 @@ function viewUserReportDetail(reportId) {
           commentsHtml += `<p><strong>${comment.formatted_date}:</strong> ${comment.comment}</p>`;
         });
         commentsHtml += "</div>";
-      } else {
-        commentsHtml = "<p>Belum ada komentar.</p>";
       }
 
       userReportDetails.innerHTML = `
@@ -471,66 +483,4 @@ function getReports() {
     console.error("Error parsing reports from localStorage:", e);
     return [];
   }
-}
-
-// Add this function to admin.js (and user-dashboard.js)
-function handleChangePasswordFrontend() {
-  const oldPassword = document.getElementById("oldPassword").value;
-  const newPassword = document.getElementById("newPassword").value;
-  const confirmNewPassword =
-    document.getElementById("confirmNewPassword").value;
-
-  if (!oldPassword || !newPassword || !confirmNewPassword) {
-    showNotification("Semua field kata sandi harus diisi.", "error");
-    return;
-  }
-
-  if (newPassword !== confirmNewPassword) {
-    showNotification(
-      "Kata sandi baru dan konfirmasi kata sandi tidak cocok.",
-      "error"
-    );
-    return;
-  }
-
-  if (newPassword.length < 6) {
-    showNotification("Kata sandi baru minimal 6 karakter.", "error");
-    return;
-  }
-
-  showNotification("Mengubah kata sandi...", "info");
-
-  fetch("../shared/php/auth.php", {
-    // Path to the shared auth handler
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      action: "change_password",
-      old_password: oldPassword,
-      new_password: newPassword,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        showNotification(data.message, "success");
-        // Clear password fields on success
-        document.getElementById("oldPassword").value = "";
-        document.getElementById("newPassword").value = "";
-        document.getElementById("confirmNewPassword").value = "";
-        // Optionally close modal or reload profile details
-        closeUserProfileModal();
-      } else {
-        showNotification(data.error || "Gagal mengubah kata sandi.", "error");
-      }
-    })
-    .catch((error) => {
-      console.error("Change password error:", error);
-      showNotification(
-        "Terjadi kesalahan jaringan saat mengubah kata sandi.",
-        "error"
-      );
-    });
 }
