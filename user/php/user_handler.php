@@ -1,10 +1,8 @@
 <?php
-// User-specific Operations Handler
 require_once 'config.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
 function checkUserAccess() {
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
@@ -16,7 +14,6 @@ function checkUserAccess() {
     }
 }
 
-// Handle different user operations
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 switch ($action) {
@@ -104,23 +101,19 @@ function getUserStats() {
         
         $database = new Database();
         $conn = $database->getConnection();
-        
-        // Get total reports count for user
+
         $stmt = $conn->prepare("SELECT COUNT(*) as total FROM reports WHERE email = :email");
         $stmt->execute([':email' => $userEmail]);
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-        
-        // Get pending reports count for user
+
         $stmt = $conn->prepare("SELECT COUNT(*) as pending FROM reports WHERE email = :email AND status = 'pending'");
         $stmt->execute([':email' => $userEmail]);
         $pending = $stmt->fetch(PDO::FETCH_ASSOC)['pending'];
-        
-        // Get in progress reports count for user
+
         $stmt = $conn->prepare("SELECT COUNT(*) as in_progress FROM reports WHERE email = :email AND status = 'in_progress'");
         $stmt->execute([':email' => $userEmail]);
         $inProgress = $stmt->fetch(PDO::FETCH_ASSOC)['in_progress'];
-        
-        // Get completed reports count for user
+
         $stmt = $conn->prepare("SELECT COUNT(*) as completed FROM reports WHERE email = :email AND status = 'completed'");
         $stmt->execute([':email' => $userEmail]);
         $completed = $stmt->fetch(PDO::FETCH_ASSOC)['completed'];
@@ -152,8 +145,7 @@ function deleteUserReport() {
         
         $database = new Database();
         $conn = $database->getConnection();
-        
-        // Check if report belongs to user and is still pending
+
         $stmt = $conn->prepare("SELECT status FROM reports WHERE id = :id AND email = :email");
         $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
         $report = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -169,12 +161,10 @@ function deleteUserReport() {
             echo json_encode(['error' => 'Only pending reports can be deleted']);
             return;
         }
-        
-        // Delete related comments first
+
         $stmt = $conn->prepare("DELETE FROM comments WHERE report_id = :id");
         $stmt->execute([':id' => $reportId]);
-        
-        // Delete the report
+
         $stmt = $conn->prepare("DELETE FROM reports WHERE id = :id AND email = :email");
         $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
         
@@ -205,8 +195,7 @@ function getReportDetail() {
         
         $database = new Database();
         $conn = $database->getConnection();
-        
-        // Get report details - user can only view their own reports
+
         $stmt = $conn->prepare("SELECT * FROM reports WHERE id = :id AND email = :email");
         $stmt->execute([':id' => $reportId, ':email' => $userEmail]);
         $report = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -216,8 +205,7 @@ function getReportDetail() {
             echo json_encode(['error' => 'Report not found or access denied']);
             return;
         }
-        
-        // Get comments for the report
+
         $stmt = $conn->prepare("SELECT * FROM comments WHERE report_id = :id ORDER BY created_at ASC");
         $stmt->execute([':id' => $reportId]);
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);

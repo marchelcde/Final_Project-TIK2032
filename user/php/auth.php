@@ -40,15 +40,14 @@ function handleLogin() {
         
         $username = sanitize($data['username']);
         $password = $data['password'];
-        
-        // Simple authentication (in production, use proper password hashing)
+
         $users = [
             'admin' => ['password' => 'admin123', 'role' => 'admin'],
             'user' => ['password' => 'user123', 'role' => 'user']
         ];
         
         if (isset($users[$username]) && $users[$username]['password'] === $password) {
-            // Set session
+
             $_SESSION['user_id'] = $username;
             $_SESSION['user_role'] = $users[$username]['role'];
             $_SESSION['login_time'] = time();
@@ -72,7 +71,6 @@ function handleLogin() {
 
 function handleLogout() {
     try {
-        // Clear session
         session_unset();
         session_destroy();
         
@@ -89,21 +87,14 @@ function handleLogout() {
 function handleRegister() {
     try {
         $data = json_decode(file_get_contents('php://input'), true);
-        
-        // Validate required fields
+
         $required = ['username', 'password', 'email', 'nama'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 jsonResponse(['error' => "Field $field is required"], 400);
             }
         }
-        
-        // In a real application, you would:
-        // 1. Check if username/email already exists
-        // 2. Hash the password
-        // 3. Store in database
-        
-        // For demo purposes, just return success
+
         jsonResponse([
             'success' => true,
             'message' => 'Registration successful'

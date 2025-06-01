@@ -1,19 +1,15 @@
 <?php
-// Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'aduan_masyarakat');
 define('DB_USER', 'root');
 define('DB_PASS', 'user123');
 
-// Application Settings
 define('APP_NAME', 'Sistem Laporan Aduan Masyarakat');
 define('APP_URL', 'http://localhost/web');
 define('UPLOAD_PATH', 'uploads/');
 
-// Session Configuration
 session_start();
 
-// Database Connection Class
 class Database {
     private $host = DB_HOST;
     private $db_name = DB_NAME;
@@ -35,7 +31,6 @@ class Database {
     }
 }
 
-// Utility Functions
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
 }
@@ -69,7 +64,6 @@ function getCategoryText($category) {
     return $categoryMap[$category] ?? $category;
 }
 
-// Response Helper
 function jsonResponse($data, $status = 200) {
     http_response_code($status);
     header('Content-Type: application/json');
@@ -77,7 +71,6 @@ function jsonResponse($data, $status = 200) {
     exit;
 }
 
-// Authentication Helper
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }

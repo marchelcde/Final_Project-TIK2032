@@ -38,8 +38,7 @@ switch ($method) {
 function createReport($db) {
     try {
         $data = json_decode(file_get_contents('php://input'), true);
-        
-        // Validate required fields
+
         $required = ['nama', 'email', 'telepon', 'kategori', 'judul', 'deskripsi', 'lokasi'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
@@ -47,16 +46,15 @@ function createReport($db) {
             }
         }
         
-        // Generate report ID
+
         $reportId = generateId('RPT');
         
-        // Prepare SQL
+
         $query = "INSERT INTO reports (id, nama, email, telepon, kategori, judul, deskripsi, lokasi, status, created_at) 
                   VALUES (:id, :nama, :email, :telepon, :kategori, :judul, :deskripsi, :lokasi, 'pending', NOW())";
         
         $stmt = $db->prepare($query);
         
-        // Bind parameters
         $stmt->bindParam(':id', $reportId);
         $stmt->bindParam(':nama', sanitize($data['nama']));
         $stmt->bindParam(':email', sanitize($data['email']));
@@ -148,7 +146,6 @@ function getReportDetail($db) {
             jsonResponse(['error' => 'Report not found'], 404);
         }
         
-        // Format data
         $report['status_text'] = getStatusText($report['status']);
         $report['category_text'] = getCategoryText($report['kategori']);
         $report['formatted_date'] = formatDate($report['created_at']);
@@ -165,7 +162,6 @@ function getReportDetail($db) {
 
 function updateReportStatus($db) {
     try {
-        // requireAdmin(); // Uncomment when authentication is implemented
         
         $data = json_decode(file_get_contents('php://input'), true);
         
@@ -199,19 +195,15 @@ function updateReportStatus($db) {
 
 function getReportStats($db) {
     try {
-        // Total reports
         $stmt = $db->query("SELECT COUNT(*) as total FROM reports");
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
-        // Reports by status
         $stmt = $db->query("SELECT status, COUNT(*) as count FROM reports GROUP BY status");
         $statusStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Reports by category
         $stmt = $db->query("SELECT kategori, COUNT(*) as count FROM reports GROUP BY kategori");
         $categoryStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Reports by month (last 6 months)
         $stmt = $db->query("
             SELECT 
                 DATE_FORMAT(created_at, '%Y-%m') as month,
