@@ -64,7 +64,7 @@ function getUserReports() {
         $search = $_GET['search'] ?? '';
         
         // Select foto_bukti and feedback_admin as well for display
-        $query = "SELECT id, judul, kategori, lokasi, status, created_at, feedback_admin, foto_bukti FROM reports WHERE user_id = :user_id";
+        $query = "SELECT id, judul, kategori, lokasi, deskripsi, status, created_at, feedback_admin, foto_bukti FROM reports WHERE user_id = :user_id";
         $params = [':user_id' => $userId];
         
         if (!empty($status)) {
@@ -97,7 +97,10 @@ function getUserReports() {
             // Remove the raw BLOB data from the JSON response to avoid issues
             unset($report['foto_bukti']);
         }
-        
+        $jsonData = json_encode(['reports' => $reports]);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log('JSON Encode Error in getUserReports: ' . json_last_error_msg());
+    }
         jsonResponse(['reports' => $reports]);
     } catch (Exception $e) {
         http_response_code(500);

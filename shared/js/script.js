@@ -19,9 +19,8 @@ document.addEventListener("DOMContentLoaded", function () {
         navMenu.classList.remove("active");
       });
     });
-  } // End of the 'if (hamburger && navMenu)' block
+  }
 
-  // Form Submission Handler for the main index.html form (if still used)
   const reportForm = document.getElementById("reportForm");
   if (reportForm) {
     reportForm.addEventListener("submit", handleReportSubmission);
@@ -82,9 +81,6 @@ function handleReportSubmission(e) {
   // Show loading notification
   showNotification("Mengirim laporan...", "info");
 
-  // Determine the correct PHP handler based on the form's ID or context
-  // Since both index.html and laporan.php (for logged-in users) use user/php/user_handler.php
-  // for submission, this URL remains consistent.
   fetch("../user/php/user_handler.php?action=submit_report", {
     method: "POST",
     body: formData, // FormData directly as body, fetch sets Content-Type automatically
@@ -96,7 +92,7 @@ function handleReportSubmission(e) {
           data.message + " ID Laporan: " + data.reportId,
           "success"
         );
-        form.reset(); // Reset form on success
+        form.reset();
       } else {
         showNotification(data.error || "Gagal mengirim laporan", "error");
       }
@@ -107,7 +103,6 @@ function handleReportSubmission(e) {
     });
 }
 
-// Handle Login
 function handleLogin(e) {
   e.preventDefault();
 
@@ -616,24 +611,71 @@ function validateRegisterForm(userData) {
   return isValid;
 }
 
-// Logout function - CENTRALIZED
+/**
+ * Destroy server-side session via AJAX call
+ */
+function destroySession() {
+  fetch("../logout.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({
+      action: "logout",
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log("Server session destroyed successfully");
+      } else {
+        console.warn("Failed to destroy server session:", data.error);
+      }
+    })
+    .catch((error) => {
+      console.error("Error destroying server session:", error);
+    });
+}
+
+/**
+ * Complete logout function with session cleanup
+ */
 function logout() {
-  // Clear all session storage items related to user login
+  // Show loading notification
+  if (typeof showNotification === "function") {
+    showNotification("Sedang logout...", "info");
+  }
+
+  // Clear client-side storage
   sessionStorage.removeItem("userLoggedIn");
   sessionStorage.removeItem("userRole");
   sessionStorage.removeItem("currentUser");
   sessionStorage.removeItem("userEmail");
   sessionStorage.removeItem("userId");
   sessionStorage.removeItem("userName");
-  sessionStorage.clear(); // Clear all session data to be safe, if you want to ensure no other session data persists.
 
-  // Show logout message (optional, as redirect happens quickly)
+  // Clear all localStorage related to user session
+  localStorage.removeItem("userLoggedIn");
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("rememberMe");
+
+  // Clear entire session and local storage to be safe
+  sessionStorage.clear();
+
+  // Destroy server-side session
+  destroySession();
+
+  // Show success notification
   if (typeof showNotification === "function") {
-    showNotification("Anda telah logout berhasil.", "info"); // Changed type to info as it's a notification of action.
+    showNotification("Anda telah logout berhasil.", "success");
   }
 
-  // Redirect to the main index.html page (adjust path if your index.html is elsewhere)
-  window.location.href = "../index.html"; // Assuming the root index.html is one level up from shared/js/
+  // Redirect after a short delay
+  setTimeout(() => {
+    window.location.href = "../index.php";
+  }, 1500);
 }
 
 // Add this function to admin.js (and user-dashboard.js)
@@ -695,26 +737,18 @@ function handleChangePasswordFrontend() {
         document.getElementById("oldPassword").value = "";
         document.getElementById("newPassword").value = "";
         document.getElementById("confirmNewPassword").value = "";
-
-        // Optionally close modal
-        // closeUserProfileModal() is defined in user-dashboard.js and admin.js,
-        // so it's okay to call it here.
         if (typeof closeUserProfileModal === "function") {
           closeUserProfileModal();
         }
-
-        // **** ADD THIS BLOCK TO LOG OUT AFTER SUCCESS ****
-        // Use a short delay to allow the user to see the success notification
         setTimeout(() => {
-          logout(); // This will now call the centralized logout function
-        }, 1500); // 1.5 second delay
+          logout();
+        }, 1500);
       } else {
         showNotification(data.error || "Gagal mengubah kata sandi.", "error");
       }
     })
     .catch((error) => {
       console.error("Change password error:", error);
-      // Show more detailed error message if possible
       let errorMessage = "Terjadi kesalahan jaringan saat mengubah kata sandi.";
       if (error.message && error.message.includes("HTTP error!")) {
         errorMessage = "Error dari server: " + error.message;
