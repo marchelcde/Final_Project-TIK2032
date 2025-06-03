@@ -3,9 +3,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 // Database Configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'aduan_masyarakat');
+define('DB_NAME', 'aduan_masyarakat1');
 define('DB_USER', 'root');
-define('DB_PASS', 'kenola20');
+define('DB_PASS', 'user123');
 
 // Application Settings
 define('APP_NAME', 'Sistem Laporan Aduan Masyarakat');

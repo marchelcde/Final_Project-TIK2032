@@ -78,7 +78,7 @@ function handleChangePassword($input) {
 
         // 2. Verify the old password against the stored hashed password.
         if (!password_verify($oldPassword, $user['password'])) {
-            jsonResponse(['error' => 'Kata sandi lama salah.'], 401);
+            jsonResponse(['error' => 'Kata sandi lama tidak sesuai.'], 401);
             return;
         }
 

@@ -24,16 +24,7 @@
               class="nav-link"
               onclick="showUserProfileModal(); return false;"
             >
-              <i class="fas fa-user"></i> User
-            </a>
-          </li>
-          <li class="nav-item">
-            <a
-              href="logout.php"
-              class="nav-link"
-              onclick="logout(); return false;"
-            >
-              <i class="fas fa-sign-out-alt"></i> Logout
+              <i class="fas fa-user"></i> User Profile
             </a>
           </li>
         </ul>
@@ -117,7 +108,7 @@
 
     <div id="userReportModal" class="modal">
       <div class="modal-content">
-        <span class="close">&times;</span>
+        <span id="closeButton" class="close">&times;</span>
         <h2>Detail Laporan</h2>
         <div id="userReportDetails"></div>
       </div>
@@ -162,7 +153,7 @@
     </div>
 
     <footer>
-      <div class="container">
+      <div class="footer-bottom">
         <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
       </div>
     </footer>

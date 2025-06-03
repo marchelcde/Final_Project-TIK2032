@@ -135,3 +135,83 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
+
+
+BEGIN
+    -- Hapus komentar laporan yang terkait dengan laporan lama
+    DELETE FROM report_comments
+    WHERE report_id IN (
+        SELECT id FROM reports
+        WHERE created_at < DATE_SUB(NOW(), INTERVAL days_old DAY)
+        AND status IN ('completed', 'rejected')
+    );
+
+    -- Hapus laporan lama dari tabel reports
+    DELETE FROM reports
+    WHERE created_at < DATE_SUB(NOW(), INTERVAL days_old DAY)
+    AND status IN ('completed', 'rejected');
+END
+
+BEGIN
+    DECLARE new_id VARCHAR(20);
+    DECLARE id_exists INT DEFAULT 1;
+    
+    WHILE id_exists > 0 DO
+        SET new_id = CONCAT('RPT', UNIX_TIMESTAMP(), FLOOR(RAND() * 1000));
+        SELECT COUNT(*) INTO id_exists FROM reports WHERE id = new_id;
+    END WHILE;
+    
+    RETURN new_id;
+END
+
+
+BEGIN
+    DECLARE new_id VARCHAR(20);
+    DECLARE id_exists INT DEFAULT 1;
+    
+    WHILE id_exists > 0 DO
+        SET new_id = CONCAT('USR', UNIX_TIMESTAMP(), FLOOR(RAND() * 1000));
+        SELECT COUNT(*) INTO id_exists FROM users WHERE id = new_id;
+    END WHILE;
+    
+    RETURN new_id;
+END
+
+BEGIN
+    SELECT 
+        kategori,
+        COUNT(*) as total_reports,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+        ROUND((SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) as completion_rate
+    FROM reports 
+    GROUP BY kategori
+    ORDER BY total_reports DESC;
+END
+
+BEGIN
+    SELECT 
+        DATE_FORMAT(created_at, '%Y-%m') as month,
+        COUNT(*) as total_reports,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_reports,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_reports,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_reports,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected_reports
+    FROM reports 
+    WHERE created_at >= DATE_SUB(NOW(), INTERVAL months_back MONTH)
+    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+    ORDER BY month DESC;
+END
+
+BEGIN
+    SELECT 
+        COUNT(*) as total_reports,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+    FROM reports 
+    WHERE user_id = user_id;
+END

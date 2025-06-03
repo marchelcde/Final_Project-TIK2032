@@ -1,34 +1,52 @@
+<?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+$isLoggedIn = isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true;
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laporan Aduan Masyarakat</title>
+    <title>LSM</title>
     <link rel="stylesheet" href="shared/css/style.css" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
   </head>
-  <body>
+  <body data-logged-in="<?php echo $isLoggedIn ? 'true' : 'false'; ?>">
     <nav class="navbar">
       <div class="nav-container">
         <div class="nav-logo">
-          <h2>Aduan Masyarakat</h2>
+          <h2>SLM</h2>
         </div>
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="index.html" class="nav-link active">Home</a>
+            <a href="index.php" class="nav-link active">Home</a>
           </li>
           <li class="nav-item">
             <a href="about.html" class="nav-link">About</a>
           </li>
+          <?php if ($isLoggedIn): ?>
+          <li class="nav-item">
+            <a href="user/dashboard.php" class="nav-link">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a href="logout.php" class="nav-link">Logout</a>
+          </li>
+          <?php else: ?>
           <li class="nav-item">
             <a href="login.html" class="nav-link">Login</a>
           </li>
           <li class="nav-item">
             <a href="register.html" class="nav-link">Register</a>
           </li>
+          <?php endif; ?>
         </ul>
         <div class="hamburger">
           <span class="bar"></span>
@@ -45,63 +63,11 @@
           <p>
             Laporkan keluhan dan saran Anda untuk pembangunan yang lebih baik
           </p>
-          <a href="user/laporan.php" class="btn btn-primary">Buat Laporan</a>
-        </div>
-      </section>
-
-      <section id="laporan" class="form-section">
-        <div class="container">
-          <h2>Form Laporan Aduan</h2>
-          <form id="reportForm" class="report-form">
-            <div class="form-group">
-              <label for="nama">Nama Lengkap</label>
-              <input type="text" id="nama" name="nama" required />
-            </div>
-
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" required />
-            </div>
-
-            <div class="form-group">
-              <label for="telepon">No. Telepon</label>
-              <input type="tel" id="telepon" name="telepon" required />
-            </div>
-
-            <div class="form-group">
-              <label for="kategori">Kategori Aduan</label>
-              <select id="kategori" name="kategori" required>
-                <option value="">Pilih Kategori</option>
-                <option value="infrastruktur">Infrastruktur</option>
-                <option value="lingkungan">Lingkungan</option>
-                <option value="sosial">Sosial</option>
-                <option value="ekonomi">Ekonomi</option>
-                <option value="lainnya">Lainnya</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="judul">Judul Aduan</label>
-              <input type="text" id="judul" name="judul" required />
-            </div>
-
-            <div class="form-group">
-              <label for="deskripsi">Deskripsi Aduan</label>
-              <textarea
-                id="deskripsi"
-                name="deskripsi"
-                rows="5"
-                required
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="lokasi">Lokasi Kejadian</label>
-              <input type="text" id="lokasi" name="lokasi" required />
-            </div>
-
-            <button type="submit" class="btn btn-primary">Kirim Laporan</button>
-          </form>
+          <?php if ($isLoggedIn): ?>
+            <a href="user/laporan.php" class="btn btn-primary">Buat Laporan</a>
+          <?php else: ?>
+            <a href="login.html" class="btn btn-primary">Login untuk Membuat Laporan</a>
+          <?php endif; ?>
         </div>
       </section>
 
@@ -130,7 +96,7 @@
     </main>
 
     <footer>
-      <div class="container">
+      <div class="footer-bottom">
         <p>&copy; 2025 Sistem Laporan Aduan Masyarakat. All rights reserved.</p>
       </div>
     </footer>

@@ -1,9 +1,3 @@
-// user-dashboard.js
-// This file will now only contain logic specific to the user dashboard,
-// including the user profile modal functions, user dashboard stats loading,
-// and user's report list loading with search/filter.
-// General UI logic (like hamburger menu, smooth scrolling) is in shared/js/script.js
-
 document.addEventListener("DOMContentLoaded", function () {
   const reportForm = document.getElementById("reportForm");
   if (reportForm) {
@@ -20,7 +14,29 @@ document.addEventListener("DOMContentLoaded", function () {
     registerForm.addEventListener("submit", handleRegister);
   }
 
-  // Close user profile modal on outside click
+  const closeButton = document.getElementById("closeButton");
+  if (closeButton) {
+    closeButton.addEventListener("click", function () {
+      const userReportModal = document.getElementById("userReportModal");
+      if (userReportModal) {
+        userReportModal.style.display = "none";
+      }
+    });
+  }
+
+  const userReportModal = document.getElementById("userReportModal");
+  if (userReportModal) {
+    userReportModal.addEventListener("click", function (event) {
+      const modalContent = userReportModal.querySelector(".modal-content");
+      if (
+        event.target === userReportModal ||
+        (modalContent && !modalContent.contains(event.target))
+      ) {
+        userReportModal.style.display = "none";
+      }
+    });
+  }
+
   const userProfileModal = document.getElementById("userProfileModal");
   if (userProfileModal) {
     window.addEventListener("click", function (event) {
@@ -106,7 +122,6 @@ function loadUserReports() {
 
   const searchValue = searchInput ? searchInput.value : "";
   const statusFilterValue = statusFilterUser ? statusFilterUser.value : "";
-
   const params = new URLSearchParams({
     action: "get_user_reports",
   });
@@ -116,6 +131,10 @@ function loadUserReports() {
   if (statusFilterValue) {
     params.append("status", statusFilterValue);
   }
+
+  // Show loading state
+  userReportsGrid.innerHTML =
+    '<div class="reports-loading">Memuat laporan...</div>';
 
   fetch(`php/user_handler.php?${params.toString()}`)
     .then((response) => response.json())
@@ -136,35 +155,75 @@ function loadUserReports() {
           const reportCard = document.createElement("div");
           reportCard.classList.add("report-card");
           reportCard.innerHTML = `
-                        <h3>${report.judul}</h3>
-                        <p><strong>ID Laporan:</strong> ${report.id}</p>
-                        <p><strong>Kategori:</strong> ${
-                          report.category_text
-                        }</p>
-                        <p><strong>Lokasi:</strong> ${report.lokasi}</p>
-                        <p><strong>Status:</strong> <span class="status-badge status-${
-                          report.status
-                        }">${report.status_text}</span></p>
-                        <p><strong>Tanggal:</strong> ${
-                          report.formatted_date
-                        }</p>
-                        ${
-                          report.feedback_admin
-                            ? `<p><strong>Feedback Admin:</strong> ${report.feedback_admin}</p>`
-                            : ""
-                        }
-                        ${
-                          report.foto_bukti_base64
-                            ? `<img src="data:image/jpeg;base64,${report.foto_bukti_base64}" alt="Foto Bukti" class="report-image" style="max-width: 100%; height: auto; margin-top: 10px;">`
-                            : ""
-                        }
-                        <div class="report-actions">
+                        <div class="report-header">
+                            <h3>${report.judul}</h3>
+                            <span class="status-badge status-${
+                              report.status
+                            }">${report.status_text}</span>
+                        </div>
+                        <div class="report-body">
+                            <div class="report-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-hashtag"></i>
+                                    <span>ID: ${report.id}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-folder"></i>
+                                    <span>${report.category_text}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>${report.lokasi}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>${report.formatted_date}</span>
+                                </div>
+                            </div>
+                            <div class="report-description">
+                                ${
+                                  report.deskripsi.length > 100
+                                    ? report.deskripsi.substring(0, 100) + "..."
+                                    : report.deskripsi
+                                }
+                            </div>
+                            ${
+                              report.feedback_admin
+                                ? `<div class="admin-feedback">
+                                    <div class="meta-item">
+                                        <i class="fas fa-user-shield"></i>
+                                        <span><strong>Feedback Admin:</strong></span>
+                                    </div>
+                                    <p>${
+                                      report.feedback_admin.length > 80
+                                        ? report.feedback_admin.substring(
+                                            0,
+                                            80
+                                          ) + "..."
+                                        : report.feedback_admin
+                                    }</p>
+                                   </div>`
+                                : ""
+                            }
+                            ${
+                              report.foto_bukti_base64
+                                ? `<div class="report-image-container">
+                                    <img src="data:image/jpeg;base64,${report.foto_bukti_base64}" alt="Foto Bukti" class="report-image" onclick="openImageModal('data:image/jpeg;base64,${report.foto_bukti_base64}', '${report.judul}')">
+                                   </div>`
+                                : ""
+                            }
+                        </div>
+                        <div class="report-footer">
                             <button class="btn btn-primary btn-sm" onclick="viewUserReportDetail('${
                               report.id
-                            }')">Lihat Detail</button>
+                            }')">
+                                <i class="fas fa-eye"></i> Lihat Detail
+                            </button>
                             ${
                               report.status === "pending"
-                                ? `<button class="btn btn-danger btn-sm" onclick="deleteUserReport('${report.id}')">Hapus</button>`
+                                ? `<button class="btn btn-danger btn-sm" onclick="deleteUserReport('${report.id}')">
+                                    <i class="fas fa-trash"></i> Hapus
+                                   </button>`
                                 : ""
                             }
                         </div>
@@ -205,7 +264,7 @@ function viewUserReportDetail(reportId) {
 
       let commentsHtml = "";
       if (comments && comments.length > 0) {
-        commentsHtml = '<h4>Komentar:</h4><div class="report-comments">';
+        commentsHtml = '<h4>Proses:</h4><div class="report-comments">';
         comments.forEach((comment) => {
           commentsHtml += `<p><strong>${comment.formatted_date}:</strong> ${comment.comment}</p>`;
         });
@@ -236,7 +295,7 @@ function viewUserReportDetail(reportId) {
                     </div>
                     ${
                       report.foto_bukti_base64
-                        ? `<div style="margin: 1rem 0;"><p><strong>Foto Bukti:</strong></p><img src="data:image/jpeg;base64,${report.foto_bukti_base64}" alt="Foto Bukti" class="report-image" style="max-width: 100%; height: auto; margin-top: 10px;"></div>`
+                        ? `<div style="margin: 1rem 0;"><p><strong>Foto Bukti:</strong></p><img src="data:image/jpeg;base64,${report.foto_bukti_base64}" alt="Foto Bukti" class="report-image" style="max-width: 100%; height: auto; margin-top: 10px;" onclick="openImageModal('data:image/jpeg;base64,${report.foto_bukti_base64}', '${report.judul}')"></div>`
                         : ""
                     }
                     ${
@@ -483,4 +542,113 @@ function getReports() {
     console.error("Error parsing reports from localStorage:", e);
     return [];
   }
+}
+
+/**
+ * User-specific logout function with server-side session cleanup
+ */
+function logout() {
+  // Show loading notification
+  if (typeof showNotification === "function") {
+    showNotification("Sedang logout...", "info");
+  }
+
+  // Clear client-side storage
+  sessionStorage.removeItem("userLoggedIn");
+  sessionStorage.removeItem("userRole");
+  sessionStorage.removeItem("currentUser");
+  sessionStorage.removeItem("userEmail");
+  sessionStorage.removeItem("userId");
+  sessionStorage.removeItem("userName");
+
+  // Clear all localStorage related to user session
+  localStorage.removeItem("userLoggedIn");
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("rememberMe");
+
+  // Clear entire session and local storage to be safe
+  sessionStorage.clear();
+
+  // Call server-side logout for proper session cleanup
+  fetch("php/logout.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({
+      action: "logout",
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log("User session destroyed successfully");
+        // Show success notification
+        if (typeof showNotification === "function") {
+          showNotification("Anda telah logout berhasil.", "success");
+        }
+        // Redirect after success
+        setTimeout(() => {
+          window.location.href = "../index.php?logout=success";
+        }, 1500);
+      } else {
+        console.warn("Failed to destroy user session:", data.error);
+        // Still redirect even if server logout failed
+        if (typeof showNotification === "function") {
+          showNotification("Logout berhasil (client-side).", "info");
+        }
+        setTimeout(() => {
+          window.location.href = "../index.php?logout=partial";
+        }, 1500);
+      }
+    })
+    .catch((error) => {
+      console.error("Error during logout:", error);
+      // Still redirect even if there's an error
+      if (typeof showNotification === "function") {
+        showNotification("Logout berhasil (offline).", "info");
+      }
+      setTimeout(() => {
+        window.location.href = "../index.php?logout=offline";
+      }, 1500);
+    });
+}
+
+// Enhanced report image viewing functionality
+function openImageModal(imageSrc, title) {
+  // Create image modal if it doesn't exist
+  let imageModal = document.getElementById("imageModal");
+  if (!imageModal) {
+    imageModal = document.createElement("div");
+    imageModal.id = "imageModal";
+    imageModal.className = "modal";
+    imageModal.innerHTML = `
+            <div class="modal-content image-modal-content">
+                <span class="close image-modal-close">&times;</span>
+                <h3 id="imageModalTitle"></h3>
+                <img id="imageModalImg" src="" alt="" style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+            </div>
+        `;
+    document.body.appendChild(imageModal);
+
+    // Add close functionality
+    const closeBtn = imageModal.querySelector(".image-modal-close");
+    closeBtn.addEventListener("click", () => {
+      imageModal.style.display = "none";
+    });
+
+    imageModal.addEventListener("click", (event) => {
+      if (event.target === imageModal) {
+        imageModal.style.display = "none";
+      }
+    });
+  }
+
+  // Set image and title
+  document.getElementById("imageModalTitle").textContent =
+    title || "Foto Bukti";
+  document.getElementById("imageModalImg").src = imageSrc;
+  imageModal.style.display = "block";
 }

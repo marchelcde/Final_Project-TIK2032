@@ -3,252 +3,708 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - Laporan Aduan Masyarakat</title>
-    <link rel="stylesheet" href="../shared/css/style.css" />
+    <title>Admin Dashboard - SLM</title>
     <link rel="stylesheet" href="css/admin-style.css" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
-  </head>
-  <body>
-    <nav class="navbar admin-nav">
-      <div class="nav-container">
-        <div class="nav-logo">
-          <h2>Admin Dashboard</h2>
-        </div>
-        <ul class="nav-menu">
-          <li class="nav-item">
-            <a href="#" class="nav-link" id="adminProfileLink">
-              <i class="fas fa-user"></i> Admin
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="logout(); return false;">
-              <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <style>
+      /* Chart Container Improvements */
+      .chart-container {
+        width: 100%;
+        height: 400px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
 
-    <div class="admin-layout">
-      <aside class="sidebar">
-        <ul class="sidebar-menu">
-          <li>
-            <a
-              href="#dashboard"
-              class="sidebar-link active"
-              onclick="showSection('dashboard')"
-            >
-              <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-          </li>
-          <li>
-            <a
-              href="#reports"
-              class="sidebar-link"
-              onclick="showSection('reports')"
-            >
-              <i class="fas fa-file-alt"></i> Kelola Laporan
-            </a>
-          </li>
-          <li>
-            <a
-              href="#statistics"
-              class="sidebar-link"
-              onclick="showSection('statistics')"
-            >
-              <i class="fas fa-chart-bar"></i> Statistik
-            </a>
-          </li>
-        </ul>
+      .chart-container canvas {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+
+      /* Responsive chart sizing */
+      @media (max-width: 768px) {
+        .chart-container {
+          height: 300px;
+          padding: 0.5rem;
+        }
+      }
+
+      /* Chart loading and error states */
+      .chart-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #666;
+        font-style: italic;
+      }
+
+      .chart-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #e74c3c;
+        text-align: center;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body class="admin-page">
+    <!-- Mobile Menu Toggle -->
+    <button
+      class="mobile-menu-toggle"
+      id="mobileMenuToggle"
+      aria-label="Toggle Menu"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <div class="admin-container">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <a href="#" class="logo">
+            <i class="fas fa-shield-alt"></i>
+            SLM Admin
+          </a>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul>
+            <li>
+              <a
+                href="#dashboard"
+                class="sidebar-link active"
+                onclick="showSection('dashboard')"
+              >
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+              </a>
+            </li>
+            <li>
+              <a
+                href="#reports"
+                class="sidebar-link"
+                onclick="showSection('reports')"
+              >
+                <i class="fas fa-file-alt"></i> Kelola Laporan
+              </a>
+            </li>
+            <li>
+              <a
+                href="#users"
+                class="sidebar-link"
+                onclick="showSection('users')"
+              >
+                <i class="fas fa-users"></i> Kelola Pengguna
+              </a>
+            </li>
+            <li>
+              <a
+                href="#statistics"
+                class="sidebar-link"
+                onclick="showSection('statistics')"
+              >
+                <i class="fas fa-chart-bar"></i> Statistik & Laporan
+              </a>
+            </li>
+            <li>
+              <a
+                href="#settings"
+                class="sidebar-link"
+                onclick="showSection('settings')"
+              >
+                <i class="fas fa-cogs"></i> Pengaturan
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer" id="sidebarFooter">
+          <p>&copy; 2025 SLM System</p>
+        </div>
       </aside>
 
-      <main class="admin-content">
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Dashboard Section -->
         <section id="dashboard" class="content-section active">
-          <h1>Dashboard Overview</h1>
+          <div class="content-header">
+            <h1>Dashboard Overview</h1>
+            <div class="quick-actions">
+              <button class="btn btn-primary" onclick="showSection('reports')">
+                <i class="fas fa-file-alt"></i> Kelola Laporan
+              </button>
+              <button
+                class="btn btn-outline-primary"
+                onclick="refreshDashboard()"
+              >
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
+          </div>
 
+          <!-- Statistics Cards -->
           <div class="stats-grid">
             <div class="stat-card">
-              <i class="fas fa-file-alt"></i>
-              <div>
-                <h3 id="totalReports">0</h3>
-                <p>Total Laporan</p>
+              <div class="stat-card-icon">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <div class="stat-card-info">
+                <h4>Total Laporan</h4>
+                <p id="totalReports">0</p>
               </div>
             </div>
             <div class="stat-card">
-              <i class="fas fa-clock"></i>
-              <div>
-                <h3 id="pendingReports">0</h3>
-                <p>Menunggu</p>
+              <div class="stat-card-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-card-info">
+                <h4>Menunggu Review</h4>
+                <p id="pendingReports">0</p>
               </div>
             </div>
             <div class="stat-card">
-              <i class="fas fa-check-circle"></i>
-              <div>
-                <h3 id="completedReports">0</h3>
-                <p>Selesai</p>
+              <div class="stat-card-icon">
+                <i class="fas fa-spinner"></i>
+              </div>
+              <div class="stat-card-info">
+                <h4>Sedang Diproses</h4>
+                <p id="inProgressReports">0</p>
               </div>
             </div>
             <div class="stat-card">
-              <i class="fas fa-times-circle"></i>
-              <div>
-                <h3 id="rejectedReports">0</h3>
-                <p>Ditolak</p>
+              <div class="stat-card-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="stat-card-info">
+                <h4>Selesai</h4>
+                <p id="completedReports">0</p>
               </div>
             </div>
           </div>
 
-          <div class="recent-reports">
-            <h2>Laporan Terbaru</h2>
-            <div class="table-container">
-              <table id="recentReportsTable">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Judul</th>
-                    <th>Kategori</th>
-                    <th>Status</th>
-                    <th>Tanggal</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+          <!-- Recent Reports -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Laporan Terbaru</h2>
+            </div>
+            <div class="card-body">
+              <div class="table-container">
+                <table class="admin-table" id="recentReportsTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nama Pelapor</th>
+                      <th>Email</th>
+                      <th>Judul</th>
+                      <th>Kategori</th>
+                      <th>Lokasi</th>
+                      <th>Status</th>
+                      <th>Tanggal</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Data dari JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Quick Stats Chart -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Statistik Bulanan</h2>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="dashboardTrendChart"></canvas>
+              </div>
             </div>
           </div>
         </section>
 
+        <!-- Reports Management Section -->
         <section id="reports" class="content-section">
-          <h1>Kelola Laporan</h1>
-
-          <div class="filters">
-            <select id="statusFilter">
-              <option value="">Semua Status</option>
-              <option value="pending">Menunggu</option>
-              <option value="in_progress">Diproses</option>
-              <option value="completed">Selesai</option>
-              <option value="rejected">Ditolak</option>
-            </select>
-
-            <select id="categoryFilter">
-              <option value="">Semua Kategori</option>
-              <option value="infrastruktur">Infrastruktur</option>
-              <option value="lingkungan">Lingkungan</option>
-              <option value="sosial">Sosial</option>
-              <option value="ekonomi">Ekonomi</option>
-              <option value="lainnya">Lainnya</option>
-            </select>
+          <div class="content-header">
+            <h1>Kelola Laporan</h1>
           </div>
 
-          <div class="table-container">
-            <table id="reportsTable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nama</th>
-                  <th>Judul</th>
-                  <th>Kategori</th>
-                  <th>Status</th>
-                  <th>Tanggal</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+          <!-- Filters -->
+          <div class="filters-bar">
+            <div class="form-group">
+              <label for="statusFilter">Status:</label>
+              <select id="statusFilter" class="form-control">
+                <option value="">Semua Status</option>
+                <option value="pending">Menunggu</option>
+                <option value="in_progress">Diproses</option>
+                <option value="completed">Selesai</option>
+                <option value="rejected">Ditolak</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="categoryFilter">Kategori:</label>
+              <select id="categoryFilter" class="form-control">
+                <option value="">Semua Kategori</option>
+                <option value="infrastruktur">Infrastruktur</option>
+                <option value="lingkungan">Lingkungan</option>
+                <option value="sosial">Sosial</option>
+                <option value="ekonomi">Ekonomi</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="searchInput">Cari:</label>
+              <input
+                type="text"
+                id="searchInput"
+                class="form-control"
+                placeholder="Cari laporan..."
+              />
+            </div>
+          </div>
+
+          <!-- Reports Table -->
+          <div class="card">
+            <div class="card-body">
+              <div class="table-container">
+                <table class="admin-table" id="reportsTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nama Pelapor</th>
+                      <th>Email</th>
+                      <th>Judul</th>
+                      <th>Kategori</th>
+                      <th>Lokasi</th>
+                      <th>Status</th>
+                      <th>Tanggal</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Data dari JS-->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="statistics" class="content-section">
-          <h1>Statistik Laporan</h1>
+        <!-- Users Management Section -->
+        <section id="users" class="content-section">
+          <div class="content-header">
+            <h1>Kelola Pengguna</h1>
+            <div class="quick-actions">
+              <button class="btn btn-primary" onclick="openAddUserModal()">
+                <i class="fas fa-user-plus"></i> Tambah Pengguna
+              </button>
+            </div>
+          </div>
 
-          <div class="chart-container">
-            <div class="chart-card">
-              <h3>Laporan per Kategori</h3>
-              <canvas id="categoryChart"></canvas>
+          <!-- Users Table -->
+          <div class="card">
+            <div class="card-body">
+              <div class="table-container">
+                <table class="admin-table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nama Lengkap</th>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Telepon</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Tanggal Daftar</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Data dari JS-->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section id="statistics" class="content-section">
+          <div class="content-header">
+            <h1>Statistik & Laporan</h1>
+            <div class="quick-actions">
+              <button class="btn btn-primary" onclick="generateReport()">
+                <i class="fas fa-file-pdf"></i> Generate PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Chart Cards Grid -->
+          <div class="stats-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>Laporan per Kategori</h3>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="categoryChart"></canvas>
+                </div>
+              </div>
             </div>
 
-            <div class="chart-card">
-              <h3>Status Laporan</h3>
-              <canvas id="statusChart"></canvas>
+            <div class="card">
+              <div class="card-header">
+                <h3>Status Laporan</h3>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="statusChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Statistics -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Tren Laporan Bulanan</h2>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="content-section">
+          <div class="content-header">
+            <h1>Pengaturan Sistem</h1>
+          </div>
+
+          <!-- Admin Profile Settings -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Profil Admin</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="adminFullName">Nama Lengkap</label>
+                <input
+                  type="text"
+                  id="adminFullName"
+                  class="form-control"
+                  value="Administrator"
+                />
+              </div>
+              <div class="form-group">
+                <label for="adminEmail">Email</label>
+                <input
+                  type="email"
+                  id="adminEmail"
+                  class="form-control"
+                  value="admin@elapor.com"
+                />
+              </div>
+              <div class="form-group">
+                <label for="adminUsername">Username</label>
+                <input
+                  type="text"
+                  id="adminUsername"
+                  class="form-control"
+                  value="admin"
+                  disabled
+                />
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="updateAdminProfile()">
+                <i class="fas fa-save"></i> Simpan Perubahan
+              </button>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Ubah Kata Sandi</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="currentPassword">Kata Sandi Saat Ini</label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label for="newPassword">Kata Sandi Baru</label>
+                <input type="password" id="newPassword" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">Konfirmasi Kata Sandi Baru</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  class="form-control"
+                />
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary" onclick="changePassword()">
+                <i class="fas fa-key"></i> Ubah Kata Sandi
+              </button>
+            </div>
+          </div>
+
+          <!-- Logout Section -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Sesi Admin</h2>
+            </div>
+            <div class="card-body">
+              <p>Keluar dari sistem admin dan kembali ke halaman utama.</p>
+              <div class="admin-info">
+                <p>
+                  <strong>Admin:</strong>
+                  <span id="settingsAdminName">Administrator</span>
+                </p>
+                <p>
+                  <strong>Status:</strong>
+                  <span class="status-active">Aktif</span>
+                </p>
+                <p>
+                  <strong>Sesi Login:</strong> <span id="loginTime">-</span>
+                </p>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-danger" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </button>
             </div>
           </div>
         </section>
       </main>
     </div>
-
+    <!-- Report Detail Modal -->
     <div id="reportModal" class="modal">
       <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Detail Laporan</h2>
-        <div id="reportDetails"></div>
-
-        <div class="modal-actions">
-          <select id="statusUpdate">
-            <option value="pending">Menunggu</option>
-            <option value="in_progress">Diproses</option>
-            <option value="completed">Selesai</option>
-            <option value="rejected">Ditolak</option>
-          </select>
-          <button onclick="updateReportStatus()" class="btn btn-primary">
-            Update Status
-          </button>
+        <div class="modal-header">
+          <h2>Detail Laporan</h2>
         </div>
+        <div class="modal-body">
+          <div id="reportDetails"></div>
 
-        <div class="admin-feedback-section" style="margin-top: 1.5rem">
-          <h3>Feedback Admin</h3>
-          <textarea
-            id="adminFeedbackText"
-            rows="4"
-            placeholder="Tambahkan feedback atau catatan..."
-          ></textarea>
-          <button
-            onclick="addAdminFeedback()"
-            class="btn btn-success"
-            style="margin-top: 10px"
-          >
-            <i class="fas fa-comment"></i> Tambah / Update Feedback
+          <!-- Status Update Section -->
+          <div class="form-group">
+            <label for="statusUpdate">Update Status:</label>
+            <select id="statusUpdate" class="form-control">
+              <option value="pending">Menunggu</option>
+              <option value="in_progress">Sedang Diproses</option>
+              <option value="completed">Selesai</option>
+              <option value="rejected">Ditolak</option>
+            </select>
+          </div>
+
+          <!-- Admin Feedback Section -->
+          <div class="form-group">
+            <label for="adminFeedbackText">Feedback Admin:</label>
+            <textarea
+              id="adminFeedbackText"
+              class="form-control"
+              rows="4"
+              placeholder="Tambahkan feedback atau catatan untuk laporan ini..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="updateReportStatus()">
+            <i class="fas fa-save"></i> Simpan Perubahan
+          </button>
+          <button class="btn btn-secondary" onclick="closeModal('reportModal')">
+            <i class="fas fa-times"></i> Tutup
           </button>
         </div>
       </div>
     </div>
 
-    <div id="userProfileModal" class="modal" style="display: none">
-  <div class="modal-content">
-    <div class="user-profile-details">
-        <p><strong>Nama Lengkap:</strong> <span id="profileFullName"></span></p>
-        <p><strong>Username:</strong> <span id="profileUsername"></span></p>
-        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Tambah Pengguna Baru</h2>
+          <span class="close" onclick="closeModal('addUserModal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="newUserFullName">Nama Lengkap</label>
+            <input
+              type="text"
+              id="newUserFullName"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="newUserUsername">Username</label>
+            <input
+              type="text"
+              id="newUserUsername"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="newUserEmail">Email</label>
+            <input
+              type="email"
+              id="newUserEmail"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="newUserPhone">Telepon</label>
+            <input type="tel" id="newUserPhone" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="newUserPassword">Password</label>
+            <input
+              type="password"
+              id="newUserPassword"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="newUserRole">Role</label>
+            <select id="newUserRole" class="form-control">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="addNewUser()">
+            <i class="fas fa-user-plus"></i> Tambah Pengguna
+          </button>
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('addUserModal')"
+          >
+            <i class="fas fa-times"></i> Batal
+          </button>
+        </div>
+      </div>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">Ubah Kata Sandi</h3>
-    <div class="form-group">
-        <label for="oldPassword">Kata Sandi Lama</label>
-        <input type="password" id="oldPassword" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="newPassword">Kata Sandi Baru</label>
-        <input type="password" id="newPassword" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="confirmNewPassword">Konfirmasi Kata Sandi Baru</label>
-        <input type="password" id="confirmNewPassword" class="form-control" />
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Edit Pengguna</h2>
+          <span class="close" onclick="closeModal('editUserModal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editUserFullName">Nama Lengkap</label>
+            <input
+              type="text"
+              id="editUserFullName"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="editUserUsername">Username</label>
+            <input
+              type="text"
+              id="editUserUsername"
+              class="form-control"
+              required
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label for="editUserEmail">Email</label>
+            <input
+              type="email"
+              id="editUserEmail"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="editUserPhone">Telepon</label>
+            <input type="tel" id="editUserPhone" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="editUserRole">Role</label>
+            <select id="editUserRole" class="form-control">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="saveUserEdit()">
+            <i class="fas fa-save"></i> Simpan Perubahan
+          </button>
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('editUserModal')"
+          >
+            <i class="fas fa-times"></i> Batal
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="modal-actions">
-      <button
-        class="btn btn-primary"
-        onclick="handleChangePasswordFrontend();" // CALL NEW JS FUNCTION
-      >
-        <i class="fas fa-key"></i> Ubah Kata Sandi
-      </button>
-      <button class="btn btn-secondary" onclick="logout();">
-        <i class="fas fa-sign-out-alt"></i> Logout
-      </button>
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Konfirmasi</h2>
+          <span class="close" onclick="closeModal('confirmModal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <p id="confirmMessage">Apakah Anda yakin ingin melanjutkan?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="confirmYes">Ya</button>
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('confirmModal')"
+          >
+            Tidak
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../shared/js/script.js"></script>
     <script src="js/admin.js"></script>

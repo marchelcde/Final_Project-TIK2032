@@ -69,14 +69,6 @@ function loginUser() {
             }
         }
         
-        // --- If not found/authenticated as regular user, attempt to login as ADMIN (users table with 'admin' role) ---
-        // Note: Your DB structure has 'admin' as a role in the 'users' table, not a separate 'pengguna_admin'.
-        // So, we'll check the 'users' table again, specifically for the 'admin' role.
-        
-        // If the above query found a user but password didn't match, or user not found, continue to check admin.
-        // It's more efficient to check for the admin role directly in the 'users' table if admins are just users with a specific role.
-        // If 'pengguna_admin' is a separate table, then this section should query 'pengguna_admin'.
-        // Based on database.sql, 'admin' is a role in the 'users' table.
         
         // Re-query for admin role specifically if not authenticated as regular user
         $stmt_admin = $conn->prepare("SELECT id, username, password, fullName, email, role FROM users WHERE (username = :username OR email = :username) AND role = 'admin' AND status = 'active'");
