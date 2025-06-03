@@ -1,0 +1,262 @@
+/* General Body and Page Styles */
+body {
+  font-family: "Arial", sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f7f6;
+  color: #333;
+}
+
+.container {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Header and Navbar Styles */
+.navbar {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.nav-logo h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.nav-menu {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  margin-left: 20px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.nav-link .fas {
+  margin-right: 5px;
+}
+
+.hamburger {
+  display: none;
+  cursor: pointer;
+}
+
+.bar {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 5px auto;
+  background-color: #333;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Main Content Area */
+main.container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Form Section Styles */
+.form-section {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.form-section h2 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.form-section p {
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.report-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.report-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.report-form input[type="text"],
+.report-form select,
+.report-form textarea,
+.report-form input[type="file"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: #333;
+  transition: border-color 0.3s ease;
+}
+
+.report-form input[type="text"]:focus,
+.report-form select:focus,
+.report-form textarea:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.report-form input[type="file"] {
+  padding: 0.5rem; /* Adjust padding for file input */
+}
+
+.report-form button.btn-primary {
+  background-color: #007bff;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  display: inline-block;
+}
+
+.report-form button.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+/* Not Logged In Message Styles */
+.not-logged-in-message {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.not-logged-in-message h3 {
+  color: #333;
+  margin-top: 0;
+}
+
+.not-logged-in-message p {
+  color: #666;
+}
+
+.not-logged-in-message a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.not-logged-in-message a:hover {
+  text-decoration: underline;
+}
+
+/* Footer Styles */
+footer {
+  background: #2c3e50;
+  color: white;
+  text-align: center;
+  padding: 0.5rem 0;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+footer .container p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .nav-menu {
+    position: fixed;
+    left: -100%; /* Hidden by default */
+    top: 70px; /* Adjust based on navbar height */
+    flex-direction: column;
+    background-color: #fff;
+    width: 100%;
+    text-align: center;
+    transition: 0.3s;
+    box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+    padding-bottom: 10px; /* Add some padding at the bottom */
+  }
+
+  .nav-menu.active {
+    left: 0; /* Shown when active */
+  }
+
+  .nav-item {
+    margin: 1.5rem 0;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .hamburger.active .bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger.active .bar:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .hamburger.active .bar:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  .form-section {
+    padding: 1.5rem;
+  }
+
+  .form-section h2 {
+    font-size: 1.6rem;
+  }
+}
