@@ -10,12 +10,11 @@ Setiap folder user , admin memiliki bagian (CSS , JS , PHP) Sendiri, Bahkan Konf
 
 Buka Folder DATABASE untuk konfigurasi struktur DATABASE yang dapat di run Di MYSQL masing-masing
 
-
-LINK WEBSITE : 
+LINK WEBSITE :
 https://lsm.42web.io/
 
 DEMO AKUN:
 
-USERNAME  : DEMO
+USERNAME : DEMO
 
-PASSWORD  : demo123
+PASSWORD : demo123
