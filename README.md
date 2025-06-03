@@ -8,7 +8,7 @@ ANGGOTA KELOMPOK :
 
 Setiap folder user , admin memiliki bagian (CSS , JS , PHP) Sendiri, Bahkan Konfigurasi DATABASE yang berbeda Walaupun menggunakan DATABASE yang sama.
 
-Buka Folder DATABASE untuk struktur DATABASE yang dapat di run Di MYSQL masing-masing
+Buka Folder DATABASE untuk konfigurasi struktur DATABASE yang dapat di run Di MYSQL masing-masing
 
 
 LINK WEBSITE : 
